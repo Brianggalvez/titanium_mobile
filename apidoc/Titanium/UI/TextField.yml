@@ -263,10 +263,20 @@ properties:
     type: Boolean
     default: false
     
-    
   - name: font
     summary: Font to use for text.
     type: Font
+    
+  - name: fullscreen
+    summary: |
+        Leave some space above the keyboard in landscape mode or not.
+    description: |
+        Switch between a fullscreen keyboard in landscape mode (default) or a non-fullscreen keyboard which
+        will leave some space to display UI elements.
+    type: Boolean
+    default: true
+    platforms: [android]
+    since: {android: "6.1.0"}
     
   - name: hintText
     summary: Hint text to display when the field is empty.
@@ -306,6 +316,14 @@ properties:
         Another way to change the hint text color is to use this property and specify a color.
     type: String
     default: The platform's default hint text color.
+
+  - name: hinttextid
+    summary: |
+        Key identifying a string from the locale file to use for the
+        [hintText](Titanium.UI.TextField.hintText) property.
+    description: Only one of `hintText` or `hinttextid` should be specified.
+    type: String
+    since: "6.2.0"
 
   - name: inputType
     summary: Input type to accept in the text field. Also influences the Keyboard type to display.

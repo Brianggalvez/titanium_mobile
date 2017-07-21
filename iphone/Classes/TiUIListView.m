@@ -533,7 +533,7 @@ static TiViewProxy * FindViewProxyWithBindIdContainingPoint(UIView *view, CGPoin
     } 
 }
 
--(NSIndexPath*)pathForSearchPath:(NSIndexPath*)indexPath
+- (NSIndexPath *)pathForSearchPath:(NSIndexPath *)indexPath
 {
     if (_searchResults != nil && [_searchResults count] > indexPath.section) {
         NSArray* sectionResults = [_searchResults objectAtIndex:indexPath.section];
@@ -826,6 +826,16 @@ static TiViewProxy * FindViewProxyWithBindIdContainingPoint(UIView *view, CGPoin
     [[self tableView] setBounces:![TiUtils boolValue:value def:NO]];
 }
 
+-(void)setAllowsMultipleSelectionDuringEditing_:(id)value
+{
+    ENSURE_TYPE(value, NSNumber);
+    [[self proxy] replaceValue:value forKey:@"allowsMultipleSelectionDuringEditing" notification:NO];
+
+    [[self tableView] beginUpdates];
+    [[self tableView] setAllowsMultipleSelectionDuringEditing:[TiUtils boolValue:value]];
+    [[self tableView] endUpdates];
+}
+
 #pragma mark - Search Support
 -(void)setCaseInsensitiveSearch_:(id)args
 {
@@ -1112,6 +1122,12 @@ static TiViewProxy * FindViewProxyWithBindIdContainingPoint(UIView *view, CGPoin
         [self fireEditEventWithName:@"delete" andSection:theSection atIndexPath:indexPath item:theItem];
         [theItem release];
         
+        BOOL emptyTable = NO;
+        NSUInteger sectionCount = [[self.listViewProxy sectionCount] unsignedIntValue];
+        if ( sectionCount == 0) {
+            emptyTable = YES;
+        }
+        
         BOOL emptySection = NO;
         
         if ([theSection itemCount] == 0) {
@@ -1120,13 +1136,7 @@ static TiViewProxy * FindViewProxyWithBindIdContainingPoint(UIView *view, CGPoin
                 [self.listViewProxy deleteSectionAtIndex:indexPath.section];
             }
         }
-        
-        BOOL emptyTable = NO;
-        NSUInteger sectionCount = [[self.listViewProxy sectionCount] unsignedIntValue];
-        if ( sectionCount == 0) {
-            emptyTable = YES;
-        }
-        
+
         //Reload the data now.
         [tableView beginUpdates];
         if (emptyTable) {

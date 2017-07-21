@@ -152,6 +152,10 @@ public class TiC
 	/**
 	 * @module.api
 	 */
+	public static final String EVENT_DRAGSTART = "dragstart";
+	/**
+	 * @module.api
+	 */
 	public static final String EVENT_DRAGEND = "dragend";
 
 	/**
@@ -780,6 +784,11 @@ public class TiC
 	/**
 	 * @module.api
 	 */
+	public static final String PROPERTY_AUDIO_FOCUS = "audioFocus";
+
+	/**
+	 * @module.api
+	 */
 	public static final String PROPERTY_AUTO_LINK = "autoLink";
 
 	/**
@@ -933,6 +942,11 @@ public class TiC
 	 * @module.api
 	 */
 	public static final String PROPERTY_BIRTHDAY = "birthday";
+
+	/**
+	 * @module.api
+	 */
+	public static final String PROPERTY_BLACKLIST_URL = "blacklisturl";
 
 	/**
 	 * @module.api
@@ -1424,7 +1438,7 @@ public class TiC
 	 * @module.api
 	 */
 	public static final String PROPERTY_FONT_SIZE = "font-size";
-
+		
 	/**
 	 * @module.api
 	 */
@@ -1551,6 +1565,11 @@ public class TiC
 	 * @module.api
 	 */
 	public static final String PROPERTY_HINT_TEXT = "hintText";
+	
+	/**
+	 * @module.api
+	 */
+	public static final String PROPERTY_HINT_TEXT_ID = "hinttextid";
 
 	/**
 	 * @module.api
@@ -1882,8 +1901,19 @@ public class TiC
 	 */
 	public static final String PROPERTY_MIN = "min";
 
+	/**
+	 * @module.api
+	 */
 	public static final String PROPERTY_MIN_AGE = "minAge";
+	
+	/**
+	 * @module.api
+	 */
 	public static final String PROPERTY_MIN_UPDATE_DISTANCE = "minUpdateDistance";
+	
+	/**
+	 * @module.api
+	 */
 	public static final String PROPERTY_MIN_UPDATE_TIME = "minUpdateTime";
 
 	/**
@@ -1891,6 +1921,11 @@ public class TiC
 	 */
 	public static final String PROPERTY_MIN_ROW_HEIGHT = "minRowHeight";
 
+	/**
+	 * @module.api
+	 */
+	public static final String PROPERTY_MINIMUM_FONT_SIZE = "minimumFontSize";
+	
 	/**
 	 * @module.api
 	 */
@@ -1999,7 +2034,7 @@ public class TiC
 	/**
 	 * @module.api
 	 */
-	public static final String PROPERTY_ON_STOP_BLACKISTED_URL = "onStopBlacklistedUrl";
+	public static final String PROPERTY_ON_STOP_BLACKLISTED_URL = "onStopBlacklistedUrl"; // Deprecated in 6.1.0
 
 	/**
 	 * @module.api
@@ -2526,6 +2561,11 @@ public class TiC
 	/**
 	 * @module.api
 	 */
+	public static final String PROPERTY_SPLIT_TRACK = "splitTrack";
+
+	/**
+	 * @module.api
+	 */
 	public static final String PROPERTY_SPOUSE = "spouse";
 
 	/**
@@ -2721,6 +2761,11 @@ public class TiC
 	 * @module.api
 	 */
 	public static final String PROPERTY_TOUCH_ENABLED = "touchEnabled";
+
+	/**
+	 * @module.api
+	 */
+	public static final String PROPERTY_SOUND_EFFECTS_ENABLED = "soundEffectsEnabled";
 
 	/**
 	 * @module.api
