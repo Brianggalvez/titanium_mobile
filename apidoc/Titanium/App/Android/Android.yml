@@ -3,7 +3,7 @@ name: Titanium.App.Android
 summary: A module used to access Android application resources.
 description: |
     For more information, refer to the official documentation on the Android Developer website about 
-    [application resources](http://developer.android.com/guide/topics/resources/index.html).
+    [application resources](https://developer.android.com/guide/topics/resources/index.html).
 extends: Titanium.Module
 since: "1.5"
 platforms: [android]
@@ -34,6 +34,15 @@ properties:
     type: Titanium.Android.Intent
     permission: read-only
     since: 3.3.0
+
+events:
+  - name: shortcutitemclick
+    summary: Fired when a <Titanium.UI.ShortcutItem> is clicked.
+    properties:
+      - name: id
+        summary: Identifier of the clicked shortcut item.
+        type: String
+    since: 7.5.0
 
 examples:
   - title: Custom String Resource

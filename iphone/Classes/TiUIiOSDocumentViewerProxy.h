@@ -6,19 +6,17 @@
  */
 #ifdef USE_TI_UIIOSDOCUMENTVIEWER
 
-#import "TiProxy.h"
+#import <TitaniumKit/TiProxy.h>
 
-@interface TiUIiOSDocumentViewerProxy : TiProxy<UIDocumentInteractionControllerDelegate> {
-@private
-	UIDocumentInteractionController *controller;
+@interface TiUIiOSDocumentViewerProxy : TiProxy <UIDocumentInteractionControllerDelegate> {
+  @private
+  UIDocumentInteractionController *controller;
 }
 
-@property(nonatomic,readwrite,assign) id url;
-@property(nonatomic,readonly) id icons;
-@property(nonatomic,readonly) id name;
-
+@property (nonatomic, readwrite, assign) id url;
+@property (nonatomic, readonly) id icons;
+@property (nonatomic, readonly) id name;
 
 @end
-
 
 #endif

@@ -7,6 +7,7 @@
 package org.appcelerator.titanium;
 
 import org.appcelerator.kroll.common.Log;
+import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.KrollRuntime;
 import org.appcelerator.titanium.util.TiActivitySupport;
 import org.appcelerator.titanium.util.TiRHelper;
@@ -21,13 +22,12 @@ import android.view.Window;
 
 import java.util.Set;
 
-public class TiRootActivity extends TiLaunchActivity
-	implements TiActivitySupport
+public class TiRootActivity extends TiLaunchActivity implements TiActivitySupport
 {
 	private static final String TAG = "TiRootActivity";
 	private boolean finishing = false;
 
-	private Drawable[] backgroundLayers = {null, null};
+	private Drawable[] backgroundLayers = { null, null };
 
 	public void setBackgroundColor(int color)
 	{
@@ -69,7 +69,10 @@ public class TiRootActivity extends TiLaunchActivity
 	@Override
 	public String getUrl()
 	{
-		return "app.js";
+		// The Titanium "ti.main.js" script is shared by all platforms.
+		// It will run the app developer's "app.js" script after loading all JS extensions.
+		// Script Location: titanium_mobile/common/Resources
+		return "ti.main.js";
 	}
 
 	@Override
@@ -80,6 +83,12 @@ public class TiRootActivity extends TiLaunchActivity
 		TiRootActivity rootActivity = tiApp.getRootActivity();
 
 		if (intent != null) {
+
+			// remove 'singleTop' flag and reset window stack count
+			if ((intent.getFlags() & Intent.FLAG_ACTIVITY_SINGLE_TOP) == Intent.FLAG_ACTIVITY_SINGLE_TOP) {
+				intent.setFlags(intent.getFlags() & ~Intent.FLAG_ACTIVITY_SINGLE_TOP);
+				resetTotalWindowStack();
+			}
 			if (rootActivity != null) {
 
 				// TIMOB-24527: FLAG_ACTIVITY_NEW_DOCUMENT creates a new activity instance
@@ -94,13 +103,18 @@ public class TiRootActivity extends TiLaunchActivity
 					activityOnCreate(savedInstanceState);
 					return;
 				}
+				// TIMOB-25048: fix shortcut intents when application is already running
+				if (intent.hasExtra(TiC.EVENT_PROPERTY_SHORTCUT)) {
+					intent.setAction(Intent.ACTION_MAIN);
+				}
 				rootActivity.setIntent(intent);
 			} else {
 
 				// TIMOB-24497: launching as CATEGORY_HOME or CATEGORY_DEFAULT prevents intent data from
 				// being passed to our resumed activity. Re-launch using CATEGORY_LAUNCHER.
 				Set<String> categories = intent.getCategories();
-				if (categories == null || categories.contains(Intent.CATEGORY_HOME) || !categories.contains(Intent.CATEGORY_LAUNCHER)) {
+				if (categories == null || categories.contains(Intent.CATEGORY_HOME)
+					|| !categories.contains(Intent.CATEGORY_LAUNCHER)) {
 					finish();
 
 					if (categories != null) {
@@ -120,10 +134,9 @@ public class TiRootActivity extends TiLaunchActivity
 			}
 
 			// TIMOB-15253: implement 'singleTask' like launchMode as android:launchMode cannot be used with Titanium
-			if (tiApp.intentFilterNewTask() &&
-				intent.getAction() != null && intent.getAction().equals(Intent.ACTION_VIEW) &&
-				intent.getDataString() != null &&
-				(intent.getFlags() & Intent.FLAG_ACTIVITY_NEW_TASK) != Intent.FLAG_ACTIVITY_NEW_TASK) {
+			if (tiApp.intentFilterNewTask() && intent.getAction() != null
+				&& intent.getAction().equals(Intent.ACTION_VIEW) && intent.getDataString() != null
+				&& (intent.getFlags() & Intent.FLAG_ACTIVITY_NEW_TASK) != Intent.FLAG_ACTIVITY_NEW_TASK) {
 
 				if (rootActivity == null) {
 					intent.setAction(Intent.ACTION_MAIN);
@@ -131,7 +144,7 @@ public class TiRootActivity extends TiLaunchActivity
 				intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 				startActivity(intent);
 				finish();
-				
+
 				KrollRuntime.incrementActivityRefCount();
 				activityOnCreate(savedInstanceState);
 				return;
@@ -206,6 +219,13 @@ public class TiRootActivity extends TiLaunchActivity
 		if (finishing2373) {
 			return;
 		}
+		TiApplication tiApp = TiApplication.getInstance();
+		if (tiApp != null) {
+			KrollModule appModule = tiApp.getModuleByName("App");
+			if (appModule != null) {
+				appModule.fireEvent(TiC.EVENT_CLOSE, null);
+			}
+		}
 
 		Log.d(TAG, "root activity onDestroy, activity = " + this, Log.DEBUG_MODE);
 	}
@@ -227,5 +247,4 @@ public class TiRootActivity extends TiLaunchActivity
 			super.finish();
 		}
 	}
-
 }

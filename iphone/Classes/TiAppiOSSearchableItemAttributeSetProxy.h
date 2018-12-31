@@ -6,21 +6,21 @@
  */
 #if defined(USE_TI_APPIOSSEARCHQUERY) || defined(USE_TI_APPIOSSEARCHABLEITEMATTRIBUTESET)
 
-#import "TiProxy.h"
 #import <CoreSpotlight/CoreSpotlight.h>
+#import <TitaniumKit/TiProxy.h>
 
 @interface TiAppiOSSearchableItemAttributeSetProxy : TiProxy {
-@private
-    NSArray *dateFieldTypes;
-    NSArray *urlFieldTypes;
-    NSArray *unsupportedFieldTypes;
+  @private
+  NSArray *dateFieldTypes;
+  NSArray *urlFieldTypes;
+  NSArray *unsupportedFieldTypes;
 }
 
--(id)initWithItemContentType:(NSString *)itemContentType withProps:(NSDictionary*)props;
+- (id)initWithItemContentType:(NSString *)itemContentType withProps:(NSDictionary *)props;
 
--(id)initWithItemAttributeSet:(CSSearchableItemAttributeSet*)attributeSet;
+- (id)initWithItemAttributeSet:(CSSearchableItemAttributeSet *)attributeSet;
 
-@property(nonatomic,retain) CSSearchableItemAttributeSet *attributes;
+@property (nonatomic, retain) CSSearchableItemAttributeSet *attributes;
 
 @end
 #endif

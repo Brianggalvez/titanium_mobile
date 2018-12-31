@@ -8,18 +8,18 @@
 
 #import "TiUIiOSScrollIndicatorStyleProxy.h"
 
-#import "TiUtils.h"
+#import <TitaniumKit/TiUtils.h>
 
 @implementation TiUIiOSScrollIndicatorStyleProxy
 
--(NSString*)apiName
+- (NSString *)apiName
 {
-    return @"Ti.UI.iOS.ScrollIndicatorStyle";
+  return @"Ti.UI.iOS.ScrollIndicatorStyle";
 }
 
-MAKE_SYSTEM_PROP(DEFAULT,UIScrollViewIndicatorStyleDefault);
-MAKE_SYSTEM_PROP(BLACK,UIScrollViewIndicatorStyleBlack);
-MAKE_SYSTEM_PROP(WHITE,UIScrollViewIndicatorStyleWhite);
+MAKE_SYSTEM_PROP(DEFAULT, UIScrollViewIndicatorStyleDefault);
+MAKE_SYSTEM_PROP(BLACK, UIScrollViewIndicatorStyleBlack);
+MAKE_SYSTEM_PROP(WHITE, UIScrollViewIndicatorStyleWhite);
 
 @end
 

@@ -5,11 +5,11 @@
  * Please see the LICENSE included with this distribution for details.
  */
 
-#import "TiProxy.h"
 #import <Photos/Photos.h>
+#import <TitaniumKit/TiProxy.h>
 
 @interface TiUIiOSLivePhoto : TiProxy
 
-@property(nonatomic,retain) PHLivePhoto *livePhoto;
+@property (nonatomic, retain) PHLivePhoto *livePhoto;
 
 @end

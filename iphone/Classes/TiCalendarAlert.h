@@ -4,7 +4,7 @@
  * Licensed under the terms of the Apache Public License
  * Please see the LICENSE included with this distribution for details.
  */
-#import "TiProxy.h"
+#import <TitaniumKit/TiProxy.h>
 #ifdef USE_TI_CALENDAR
 
 #import <EventKit/EventKit.h>
@@ -13,16 +13,16 @@
 
 @interface TiCalendarAlert : TiProxy {
 
-@private
-    CalendarModule* module;
-    EKAlarm* alert;
+  @private
+  CalendarModule *module;
+  EKAlarm *alert;
 }
 
--(id)_initWithPageContext:(id<TiEvaluator>)context
-                    alert:(EKAlarm*)alert_
-                   module:(CalendarModule*)module_;
+- (id)_initWithPageContext:(id<TiEvaluator>)context
+                     alert:(EKAlarm *)alert_
+                    module:(CalendarModule *)module_;
 
--(EKAlarm*)alert;
+- (EKAlarm *)alert;
 @end
-    
+
 #endif

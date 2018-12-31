@@ -5,14 +5,14 @@
  * Please see the LICENSE included with this distribution for details.
  */
 #ifdef USE_TI_UIIOSSTEPPER
-#import "TiUIView.h"
+#import <TitaniumKit/TiUIView.h>
 
 @interface TiUIiOSStepper : TiUIView {
-@private
-    UIStepper *stepper;
-    UIImage *backgroundImageCache;
-    bool touchStarted;
+  @private
+  UIStepper *stepper;
+  UIImage *backgroundImageCache;
+  bool touchStarted;
 }
--(UIStepper*)stepper;
+- (UIStepper *)stepper;
 @end
 #endif

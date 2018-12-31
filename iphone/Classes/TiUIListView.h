@@ -6,15 +6,10 @@
  */
 #ifdef USE_TI_UILISTVIEW
 
-#import "TiUIView.h"
 #import "TiUIListViewProxy.h"
+#import <TitaniumKit/TiUIView.h>
 
-#if IS_XCODE_8
-// Add support for iOS 10 table-view prefetching
-@interface TiUIListView : TiUIView <UITableViewDelegate, UITableViewDataSource, UITableViewDataSourcePrefetching, UIScrollViewDelegate, UIGestureRecognizerDelegate, UISearchBarDelegate, UISearchDisplayDelegate, TiScrolling, TiProxyObserver, TiUIListViewDelegateView>
-#else
-@interface TiUIListView : TiUIView <UITableViewDelegate, UITableViewDataSource, UIScrollViewDelegate, UIGestureRecognizerDelegate, UISearchBarDelegate, UISearchDisplayDelegate, TiScrolling, TiProxyObserver, TiUIListViewDelegateView>
-#endif
+@interface TiUIListView : TiUIView <UITableViewDelegate, UITableViewDataSource, UITableViewDataSourcePrefetching, UIScrollViewDelegate, UIGestureRecognizerDelegate, UISearchBarDelegate, UISearchResultsUpdating, UISearchControllerDelegate, TiScrolling, TiProxyObserver, TiUIListViewDelegateView>
 
 #pragma mark - Private APIs
 
@@ -26,8 +21,14 @@
 - (void)setContentInsets_:(id)value withObject:(id)props;
 - (void)deselectAll:(BOOL)animated;
 - (void)updateIndicesForVisibleRows;
+- (void)viewResignFocus;
+- (void)viewGetFocus;
 
+<<<<<<< HEAD
 + (UITableViewRowAnimation)animationStyleForProperties:(NSDictionary*)properties;
+=======
++ (UITableViewRowAnimation)animationStyleForProperties:(NSDictionary *)properties;
+>>>>>>> source/master
 - (NSIndexPath *)pathForSearchPath:(NSIndexPath *)indexPath;
 
 @end

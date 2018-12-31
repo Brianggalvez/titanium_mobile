@@ -1,6 +1,7 @@
 #!/usr/bin/env node
+'use strict';
 
-var os = require('os'),
+const os = require('os'),
 	path = require('path'),
 	async = require('async'),
 	program = require('commander'),
@@ -9,26 +10,26 @@ var os = require('os'),
 	Documentation = require('./docs'),
 	git = require('./git'),
 	Packager = require('./packager'),
-	platforms = [],
-	oses = [],
 	// TODO Move common constants somewhere?
 	ROOT_DIR = path.join(__dirname, '..'),
 	DIST_DIR = path.join(ROOT_DIR, 'dist'),
-	ALL_OSES = ['win32', 'linux', 'osx'],
-	ALL_PLATFORMS = ['ios', 'android', 'mobileweb', 'windows'],
+	ALL_OSES = [ 'win32', 'linux', 'osx' ],
+	ALL_PLATFORMS = [ 'ios', 'android', 'windows' ],
 	OS_TO_PLATFORMS = {
-		'win32': ['android', 'mobileweb', 'windows'],
-		'osx': ['android', 'ios', 'mobileweb'],
-		'linux': ['android', 'mobileweb']
+		win32: [ 'android', 'windows' ],
+		osx: [ 'android', 'ios' ],
+		linux: [ 'android' ]
 	};
 
 program
 	.option('-a, --all', 'Build a zipfile for every OS')
 	.option('-v, --sdk-version [version]', 'Override the SDK version we report', process.env.PRODUCT_VERSION || version)
 	.option('-t, --version-tag [tag]', 'Override the SDK version tag we report')
+	.option('-s, --skip-zip', 'Do not zip up the package')
 	.parse(process.argv);
 
-platforms = program.args;
+let platforms = program.args;
+let oses = [];
 
 // Are we building every platform for every OS?
 if (program.all) {
@@ -37,8 +38,8 @@ if (program.all) {
 	platforms = ALL_PLATFORMS;
 } else {
 	// We're building for the host OS
-	var thisOS = os.platform();
-	if ('darwin' === thisOS) {
+	let thisOS = os.platform();
+	if (thisOS === 'darwin') {
 		thisOS = 'osx';
 	}
 	oses.push(thisOS);
@@ -48,10 +49,10 @@ if (program.all) {
 	}
 }
 
-var versionTag = program.versionTag || program.sdkVersion;
+const versionTag = program.versionTag || program.sdkVersion;
 
 git.getHash(path.join(__dirname, '..'), function (err, hash) {
-	var outputDir = DIST_DIR;
+	const outputDir = DIST_DIR;
 	console.log('Packaging MobileSDK (%s)...', versionTag);
 
 	new Documentation(outputDir).generate(function (err) {
@@ -66,14 +67,14 @@ git.getHash(path.join(__dirname, '..'), function (err, hash) {
 		async.eachSeries(oses, function (targetOS, next) {
 			// Match our master platform list against OS_TO_PLATFORMS[item] listing.
 			// Only package the platform if its in both arrays
-			var filteredPlatforms = [];
-			for (var i = 0; i < platforms.length; i++) {
-				if (OS_TO_PLATFORMS[targetOS].indexOf(platforms[i]) != -1) {
+			const filteredPlatforms = [];
+			for (let i = 0; i < platforms.length; i++) {
+				if (OS_TO_PLATFORMS[targetOS].indexOf(platforms[i]) !== -1) {
 					filteredPlatforms.push(platforms[i]);
 				}
 			}
 
-			new Packager(outputDir, targetOS, filteredPlatforms, program.sdkVersion, versionTag, packageJSON.moduleApiVersion, hash).package(next);
+			new Packager(outputDir, targetOS, filteredPlatforms, program.sdkVersion, versionTag, packageJSON.moduleApiVersion, hash, program.skipZip).package(next);
 		}, function (err) {
 			if (err) {
 				console.error(err);

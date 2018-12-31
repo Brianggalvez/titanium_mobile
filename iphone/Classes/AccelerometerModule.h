@@ -4,16 +4,16 @@
  * Licensed under the terms of the Apache Public License
  * Please see the LICENSE included with this distribution for details.
  */
-#import "TiModule.h"
+#import <TitaniumKit/TiModule.h>
 
 #ifdef USE_TI_ACCELEROMETER
 #import <CoreMotion/CoreMotion.h>
 
-@interface AccelerometerModule : TiModule<UIAccelerometerDelegate> {
-@private
-    CMMotionManager* _motionManager;
-    NSOperationQueue* _motionQueue;
-    CFAbsoluteTime oldTime;
+@interface AccelerometerModule : TiModule <UIAccelerometerDelegate> {
+  @private
+  CMMotionManager *_motionManager;
+  NSOperationQueue *_motionQueue;
+  CFAbsoluteTime oldTime;
 }
 
 @end

@@ -5,15 +5,15 @@
  * Please see the LICENSE included with this distribution for details.
  */
 #ifdef USE_TI_UIIOSBLURVIEW
-#import "TiUIView.h"
+#import <TitaniumKit/TiUIView.h>
 
 @interface TiUIiOSBlurView : TiUIView {
-    UIVisualEffectView *blurView;
-    
-    TiDimension width;
-    TiDimension height;
-    CGFloat autoHeight;
-    CGFloat autoWidth;
+  UIVisualEffectView *blurView;
+
+  TiDimension width;
+  TiDimension height;
+  CGFloat autoHeight;
+  CGFloat autoWidth;
 }
 
 @end

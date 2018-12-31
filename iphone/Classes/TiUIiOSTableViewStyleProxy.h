@@ -6,13 +6,13 @@
  */
 #if defined(USE_TI_UIIOSTABLEVIEWSTYLE) || defined(USE_TI_UIIOSLISTVIEWSTYLE)
 
-#import "TiProxy.h"
+#import <TitaniumKit/TiProxy.h>
 
 @interface TiUIiOSTableViewStyleProxy : TiProxy {
 }
 
-@property(nonatomic,readonly) NSNumber *PLAIN;
-@property(nonatomic,readonly) NSNumber *GROUPED;
+@property (nonatomic, readonly) NSNumber *PLAIN;
+@property (nonatomic, readonly) NSNumber *GROUPED;
 
 @end
 

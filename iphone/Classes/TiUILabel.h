@@ -6,21 +6,21 @@
  */
 #ifdef USE_TI_UILABEL
 
-#import "TiUIView.h"
+#import <TitaniumKit/TiUIView.h>
 
-@interface TiUILabel : TiUIView<LayoutAutosizing> {
-@private
-    UILabel *label;
-    UIView* wrapperView;
-    BOOL requiresLayout;
-    CGRect padding;
-    UIControlContentVerticalAlignment verticalAlign;
-    CGRect initialLabelFrame;
-    CGFloat minFontSize;
+@interface TiUILabel : TiUIView <LayoutAutosizing> {
+  @private
+  UILabel *label;
+  UIView *wrapperView;
+  BOOL requiresLayout;
+  CGRect padding;
+  UIControlContentVerticalAlignment verticalAlign;
+  CGRect initialLabelFrame;
+  CGFloat minFontSize;
 }
 
-@property(nonatomic,getter=isHighlighted) BOOL     highlighted;          // default is NO
--(UILabel*)label;
+@property (nonatomic, getter=isHighlighted) BOOL highlighted; // default is NO
+- (UILabel *)label;
 @end
 
 #endif

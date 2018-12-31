@@ -6,22 +6,21 @@
  */
 #ifdef USE_TI_UISLIDER
 
-#import "TiUIView.h"
+#import <TitaniumKit/TiUIView.h>
 
+@interface TiUISlider : TiUIView <LayoutAutosizing> {
+  @private
+  UISlider *sliderView;
+  NSDate *lastTouchUp;
+  NSTimeInterval lastTimeInterval;
 
-@interface TiUISlider : TiUIView<LayoutAutosizing> {
-@private
-	UISlider *sliderView;
-	NSDate* lastTouchUp;
-	NSTimeInterval lastTimeInterval;
-	
-	UIControlState thumbImageState;
-	UIControlState rightTrackImageState;
-	UIControlState leftTrackImageState;
-    TiDimension leftTrackLeftCap;
-    TiDimension leftTrackTopCap;
-    TiDimension rightTrackLeftCap;
-    TiDimension rightTrackTopCap;
+  UIControlState thumbImageState;
+  UIControlState rightTrackImageState;
+  UIControlState leftTrackImageState;
+  TiDimension leftTrackLeftCap;
+  TiDimension leftTrackTopCap;
+  TiDimension rightTrackLeftCap;
+  TiDimension rightTrackTopCap;
 }
 
 /**
@@ -30,7 +29,6 @@
  * animated-flag in one command.
  */
 - (void)_setValue:(id)value;
-
 
 @end
 

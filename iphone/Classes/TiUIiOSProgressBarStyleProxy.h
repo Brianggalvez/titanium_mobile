@@ -6,15 +6,14 @@
  */
 #ifdef USE_TI_UIIOSPROGRESSBARSTYLE
 
-#import "TiProxy.h"
+#import <TitaniumKit/TiProxy.h>
 
 @interface TiUIiOSProgressBarStyleProxy : TiProxy {
-    
 }
 
-@property(nonatomic,readonly) NSNumber *DEFAULT;
-@property(nonatomic,readonly) NSNumber *PLAIN;
-@property(nonatomic,readonly) NSNumber *BAR;
+@property (nonatomic, readonly) NSNumber *DEFAULT;
+@property (nonatomic, readonly) NSNumber *PLAIN;
+@property (nonatomic, readonly) NSNumber *BAR;
 
 @end
 

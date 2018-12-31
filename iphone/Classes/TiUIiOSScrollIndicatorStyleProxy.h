@@ -6,17 +6,16 @@
  */
 #ifdef USE_TI_UIIOSSCROLLINDICATORSTYLE
 
-#import "TiProxy.h"
+#import <TitaniumKit/TiProxy.h>
 
 @interface TiUIiOSScrollIndicatorStyleProxy : TiProxy {
-    
-@private
-    
+
+  @private
 }
 
-@property(nonatomic,readonly) NSNumber *DEFAULT;
-@property(nonatomic,readonly) NSNumber *BLACK;
-@property(nonatomic,readonly) NSNumber *WHITE;
+@property (nonatomic, readonly) NSNumber *DEFAULT;
+@property (nonatomic, readonly) NSNumber *BLACK;
+@property (nonatomic, readonly) NSNumber *WHITE;
 
 @end
 

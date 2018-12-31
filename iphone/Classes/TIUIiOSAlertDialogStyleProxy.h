@@ -7,16 +7,15 @@
 
 #ifdef USE_TI_UIIOSALERTDIALOGSTYLE
 
-#import "TiProxy.h"
+#import <TitaniumKit/TiProxy.h>
 
 @interface TIUIiOSAlertDialogStyleProxy : TiProxy {
-    
 }
 
-@property(nonatomic, readonly) NSNumber *DEFAULT;
-@property(nonatomic, readonly) NSNumber *PLAIN_TEXT_INPUT;
-@property(nonatomic, readonly) NSNumber *SECURE_TEXT_INPUT;
-@property(nonatomic, readonly) NSNumber *LOGIN_AND_PASSWORD_INPUT;
+@property (nonatomic, readonly) NSNumber *DEFAULT;
+@property (nonatomic, readonly) NSNumber *PLAIN_TEXT_INPUT;
+@property (nonatomic, readonly) NSNumber *SECURE_TEXT_INPUT;
+@property (nonatomic, readonly) NSNumber *LOGIN_AND_PASSWORD_INPUT;
 @end
 
 #endif

@@ -160,6 +160,15 @@ methods:
                 // for Spanish locales, displays "You say adios and I say hola!"
                 Ti.API.info(String.format(L('phrase'), L('greeting', i18nMissingMsg), L('signoff', i18nMissingMsg)));
 
+events:
+  - name: change
+    summary: Fired when the device locale changes.
+    description: |
+        On Android, when a listener for this event is not present, by default the application will soft restart
+        upon a locale change. Once a listener for this event is present, the behaviour for a locale change is developer
+        defined.
+    since: "7.5.0"
+
 properties:
   - name: currentCountry
     summary: Country of the current system locale, as an ISO 2-letter code.
@@ -167,7 +176,7 @@ properties:
         This property holds a value such as `US` or `GB`. See the 
         [ISO 3166-1 alpha-2](http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2#Officially_assigned_code_elements) 
         country codes section of wikipedia for reference.
-    platforms: [android, iphone, ipad, mobileweb]
+    platforms: [android, iphone, ipad]
     type: String
     permission: read-only
     

@@ -7,25 +7,25 @@
 #ifdef USE_TI_UIIOSROWANIMATIONSTYLE
 
 #import "TiUIiOSRowAnimationStyleProxy.h"
-#import "TiBase.h"
+#import <TitaniumKit/TiBase.h>
 
 @implementation TiUIiOSRowAnimationStyleProxy
 
--(NSString*)apiName
+- (NSString *)apiName
 {
-    return @"Ti.UI.iOS.RowAnimationStyle";
+  return @"Ti.UI.iOS.RowAnimationStyle";
 }
 
-MAKE_SYSTEM_PROP(NONE,UITableViewRowAnimationNone);
-MAKE_SYSTEM_PROP(LEFT,UITableViewRowAnimationLeft);
-MAKE_SYSTEM_PROP(RIGHT,UITableViewRowAnimationRight);
-MAKE_SYSTEM_PROP(TOP,UITableViewRowAnimationTop);
-MAKE_SYSTEM_PROP(BOTTOM,UITableViewRowAnimationBottom);
-MAKE_SYSTEM_PROP(FADE,UITableViewRowAnimationFade);
+MAKE_SYSTEM_PROP(NONE, UITableViewRowAnimationNone);
+MAKE_SYSTEM_PROP(LEFT, UITableViewRowAnimationLeft);
+MAKE_SYSTEM_PROP(RIGHT, UITableViewRowAnimationRight);
+MAKE_SYSTEM_PROP(TOP, UITableViewRowAnimationTop);
+MAKE_SYSTEM_PROP(BOTTOM, UITableViewRowAnimationBottom);
+MAKE_SYSTEM_PROP(FADE, UITableViewRowAnimationFade);
 
 // used prior 0.9 in KS
-MAKE_SYSTEM_PROP(UP,UITableViewRowAnimationTop);
-MAKE_SYSTEM_PROP(DOWN,UITableViewRowAnimationBottom);
+MAKE_SYSTEM_PROP(UP, UITableViewRowAnimationTop);
+MAKE_SYSTEM_PROP(DOWN, UITableViewRowAnimationBottom);
 
 @end
 

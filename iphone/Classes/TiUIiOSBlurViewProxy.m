@@ -8,27 +8,27 @@
 #ifdef USE_TI_UIIOSBLURVIEW
 #import "TiUIiOSBlurViewProxy.h"
 #import "TiUIiOSBlurView.h"
-#import "TiUtils.h"
+#import <TitaniumKit/TiUtils.h>
 
 @implementation TiUIiOSBlurViewProxy
 
 #pragma mark Proxy lifecycle
 
--(NSString*)apiName
+- (NSString *)apiName
 {
-    return @"Ti.UI.iOS.BlurView";
+  return @"Ti.UI.iOS.BlurView";
 }
 
--(void)dealloc
+- (void)dealloc
 {
-    [super dealloc];
+  [super dealloc];
 }
 
 #pragma mark Public APIs
 
 - (TiUIiOSBlurView *)blurView
 {
-    return (TiUIiOSBlurView *)self.view;
+  return (TiUIiOSBlurView *)self.view;
 }
 
 @end

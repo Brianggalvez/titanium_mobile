@@ -4,16 +4,16 @@
  * Licensed under the terms of the Apache Public License
  * Please see the LICENSE included with this distribution for details.
  */
-#import "TiModule.h"
+#import <TitaniumKit/TiModule.h>
 
 #ifdef USE_TI_DATABASE
 
 typedef enum {
-	FieldTypeUnknown = -1,
-	FieldTypeString,
-	FieldTypeInt,
-	FieldTypeFloat,
-	FieldTypeDouble
+  FieldTypeUnknown = -1,
+  FieldTypeString,
+  FieldTypeInt,
+  FieldTypeFloat,
+  FieldTypeDouble
 } DatabaseFieldType;
 
 @interface DatabaseModule : TiModule {

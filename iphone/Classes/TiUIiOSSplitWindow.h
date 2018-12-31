@@ -5,28 +5,27 @@
  * Please see the LICENSE included with this distribution for details.
  */
 #ifdef USE_TI_UIIOSSPLITWINDOW
-#import "TiUIWindow.h"
+#import <TitaniumKit/TiUIWindow.h>
 
 @interface TiUIiOSSplitWindow : TiUIWindow {
-@private
-    UIView* masterViewWrapper;
-    UIView* detailViewWrapper;
-    BOOL showMasterInPortrait;
-    BOOL masterIsOverlayed;
-    BOOL viewsInitialized;
-    
-    TiViewProxy *masterProxy;
-    TiViewProxy *detailProxy;
-    
-    float splitRatioPortrait;
-    float splitRatioLandscape;
+  @private
+  UIView *masterViewWrapper;
+  UIView *detailViewWrapper;
+  BOOL showMasterInPortrait;
+  BOOL masterIsOverlayed;
+  BOOL viewsInitialized;
+
+  TiViewProxy *masterProxy;
+  TiViewProxy *detailProxy;
+
+  float splitRatioPortrait;
+  float splitRatioLandscape;
 }
 
-
 #pragma mark - Titanim Internal Use Only
--(void)setShowMasterInPortrait_:(id)value withObject:(id)animated;
--(void)setMasterIsOverlayed_:(id)value withObject:(id)animated;
--(void)initWrappers;
--(void)cleanup;
+- (void)setShowMasterInPortrait_:(id)value withObject:(id)animated;
+- (void)setMasterIsOverlayed_:(id)value withObject:(id)animated;
+- (void)initWrappers;
+- (void)cleanup;
 @end
 #endif

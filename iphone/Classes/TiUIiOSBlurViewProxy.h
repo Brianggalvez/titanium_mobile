@@ -5,10 +5,9 @@
  * Please see the LICENSE included with this distribution for details.
  */
 #ifdef USE_TI_UIIOSBLURVIEW
-#import "TiViewProxy.h"
+#import <TitaniumKit/TiViewProxy.h>
 
 @interface TiUIiOSBlurViewProxy : TiViewProxy {
-
 }
 
 @end

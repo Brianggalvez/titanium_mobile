@@ -8,35 +8,35 @@
 
 #import "TiUIProgressBarProxy.h"
 #import "TiUIProgressBar.h"
-#import "TiUtils.h"
+#import <TitaniumKit/TiUtils.h>
 
 @implementation TiUIProgressBarProxy
 
 USE_VIEW_FOR_CONTENT_WIDTH
 USE_VIEW_FOR_CONTENT_HEIGHT
 
--(NSString*)apiName
+- (NSString *)apiName
 {
-    return @"Ti.UI.ProgressBar";
+  return @"Ti.UI.ProgressBar";
 }
 
--(TiUIView*)newView
+- (TiUIView *)newView
 {
-    UIProgressViewStyle style = [TiUtils intValue:[self valueForUndefinedKey:@"style"] def:UIProgressViewStyleDefault];
-    CGFloat min = [TiUtils floatValue:[self valueForUndefinedKey:@"min"] def:0];
-    CGFloat max = [TiUtils floatValue:[self valueForUndefinedKey:@"max"] def:1];
+  UIProgressViewStyle style = [TiUtils intValue:[self valueForUndefinedKey:@"style"] def:UIProgressViewStyleDefault];
+  CGFloat min = [TiUtils floatValue:[self valueForUndefinedKey:@"min"] def:0];
+  CGFloat max = [TiUtils floatValue:[self valueForUndefinedKey:@"max"] def:1];
 
-    return [[TiUIProgressBar alloc] initWithStyle:style andMinimumValue:min maximumValue:max];
+  return [[TiUIProgressBar alloc] initWithStyle:style andMinimumValue:min maximumValue:max];
 }
 
 #ifndef TI_USE_AUTOLAYOUT
--(TiDimension)defaultAutoWidthBehavior:(id)unused
+- (TiDimension)defaultAutoWidthBehavior:(id)unused
 {
-    return TiDimensionAutoFill;
+  return TiDimensionAutoFill;
 }
--(TiDimension)defaultAutoHeightBehavior:(id)unused
+- (TiDimension)defaultAutoHeightBehavior:(id)unused
 {
-    return TiDimensionAutoSize;
+  return TiDimensionAutoSize;
 }
 #endif
 

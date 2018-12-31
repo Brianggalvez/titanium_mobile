@@ -1,21 +1,20 @@
 /**
  * Appcelerator Titanium Mobile
- * Copyright (c) 2009-2014 by Appcelerator, Inc. All Rights Reserved.
+ * Copyright (c) 2009-2018 by Axway, Inc. All Rights Reserved.
  * Licensed under the terms of the Apache Public License
  * Please see the LICENSE included with this distribution for details.
  */
 package org.appcelerator.titanium;
 
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.appcelerator.kroll.KrollDict;
 import org.appcelerator.kroll.KrollFunction;
+import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.KrollObject;
 import org.appcelerator.kroll.KrollProxy;
 import org.appcelerator.kroll.KrollRuntime;
@@ -31,6 +30,7 @@ import org.appcelerator.titanium.TiLifecycle.OnPrepareOptionsMenuEvent;
 import org.appcelerator.titanium.proxy.ActionBarProxy;
 import org.appcelerator.titanium.proxy.ActivityProxy;
 import org.appcelerator.titanium.proxy.IntentProxy;
+import org.appcelerator.titanium.proxy.TiToolbarProxy;
 import org.appcelerator.titanium.proxy.TiViewProxy;
 import org.appcelerator.titanium.proxy.TiWindowProxy;
 import org.appcelerator.titanium.util.TiActivityResultHandler;
@@ -41,88 +41,97 @@ import org.appcelerator.titanium.util.TiMenuSupport;
 import org.appcelerator.titanium.util.TiPlatformHelper;
 import org.appcelerator.titanium.util.TiUIHelper;
 import org.appcelerator.titanium.util.TiWeakList;
+import org.appcelerator.titanium.view.TiActionBarStyleHandler;
+import org.appcelerator.titanium.view.TiActivitySafeAreaMonitor;
 import org.appcelerator.titanium.view.TiCompositeLayout;
 import org.appcelerator.titanium.view.TiCompositeLayout.LayoutArrangement;
 
 import android.app.Activity;
 import android.support.v7.app.AppCompatActivity;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
+import android.graphics.Rect;
 import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.PowerManager;
 import android.os.RemoteException;
+import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.ViewGroup.LayoutParams;
 
-import com.appcelerator.aps.APSAnalytics;
-
 /**
  * The base class for all non tab Titanium activities. To learn more about Activities, see the
  * <a href="http://developer.android.com/reference/android/app/Activity.html">Android Activity documentation</a>.
  */
-public abstract class TiBaseActivity extends AppCompatActivity
-	implements TiActivitySupport/*, ITiWindowHandler*/
+public abstract class TiBaseActivity extends AppCompatActivity implements TiActivitySupport /*, ITiWindowHandler*/
 {
 	private static final String TAG = "TiBaseActivity";
-
-	private static OrientationChangedListener orientationChangedListener = null;
-	private OrientationEventListener orientationListener;
 
 	private boolean onDestroyFired = false;
 	private int originalOrientationMode = -1;
 	private boolean inForeground = false; // Indicates whether this activity is in foreground or not.
 	private TiWeakList<OnLifecycleEvent> lifecycleListeners = new TiWeakList<OnLifecycleEvent>();
-	private TiWeakList<OnWindowFocusChangedEvent> windowFocusChangedListeners = new TiWeakList<OnWindowFocusChangedEvent>();
-	private TiWeakList<interceptOnBackPressedEvent> interceptOnBackPressedListeners = new TiWeakList<interceptOnBackPressedEvent>();
+	private TiWeakList<OnWindowFocusChangedEvent> windowFocusChangedListeners =
+		new TiWeakList<OnWindowFocusChangedEvent>();
+	private TiWeakList<interceptOnBackPressedEvent> interceptOnBackPressedListeners =
+		new TiWeakList<interceptOnBackPressedEvent>();
 	private TiWeakList<OnInstanceStateEvent> instanceStateListeners = new TiWeakList<OnInstanceStateEvent>();
 	private TiWeakList<OnActivityResultEvent> onActivityResultListeners = new TiWeakList<OnActivityResultEvent>();
-	private TiWeakList<OnCreateOptionsMenuEvent>  onCreateOptionsMenuListeners = new TiWeakList<OnCreateOptionsMenuEvent>();
-	private TiWeakList<OnPrepareOptionsMenuEvent> onPrepareOptionsMenuListeners = new TiWeakList<OnPrepareOptionsMenuEvent>();
-	private APSAnalytics analytics = APSAnalytics.getInstance();
+	private TiWeakList<OnCreateOptionsMenuEvent> onCreateOptionsMenuListeners =
+		new TiWeakList<OnCreateOptionsMenuEvent>();
+	private TiWeakList<OnPrepareOptionsMenuEvent> onPrepareOptionsMenuListeners =
+		new TiWeakList<OnPrepareOptionsMenuEvent>();
+	private boolean sustainMode = false;
+	private TiActionBarStyleHandler actionBarStyleHandler;
+	private TiActivitySafeAreaMonitor safeAreaMonitor;
 
-
-	public static class PermissionContextData {
+	public static class PermissionContextData
+	{
 		private final Integer requestCode;
 		private final KrollObject context;
 		private final KrollFunction callback;
 
-		public PermissionContextData(Integer requestCode, KrollFunction callback,
-									 KrollObject context) {
+		public PermissionContextData(Integer requestCode, KrollFunction callback, KrollObject context)
+		{
 			this.requestCode = requestCode;
 			this.callback = callback;
 			this.context = context;
 		}
 
-		public Integer getRequestCode() {
+		public Integer getRequestCode()
+		{
 			return requestCode;
 		}
 
-		public KrollFunction getCallback() {
+		public KrollFunction getCallback()
+		{
 			return callback;
 		}
 
-		public KrollObject getContext() {
+		public KrollObject getContext()
+		{
 			return context;
 		}
 	}
 
-	private static ConcurrentHashMap<Integer,PermissionContextData> callbackDataByPermission = new ConcurrentHashMap<Integer, PermissionContextData>();
+	private static ConcurrentHashMap<Integer, PermissionContextData> callbackDataByPermission =
+		new ConcurrentHashMap<Integer, PermissionContextData>();
 
 	protected View layout;
 	protected TiActivitySupportHelper supportHelper;
@@ -130,13 +139,12 @@ public abstract class TiBaseActivity extends AppCompatActivity
 	protected TiWindowProxy window;
 	protected TiViewProxy view;
 	protected ActivityProxy activityProxy;
-	protected TiWeakList<ConfigurationChangedListener> configChangedListeners = new TiWeakList<ConfigurationChangedListener>();
-	protected int orientationDegrees;
+	protected TiWeakList<ConfigurationChangedListener> configChangedListeners =
+		new TiWeakList<ConfigurationChangedListener>();
 	protected TiMenuSupport menuHelper;
 	protected Messenger messenger;
 	protected int msgActivityCreatedId = -1;
 	protected int msgId = -1;
-	protected static int previousOrientation = -1;
 	//Storing the activity's dialogs and their persistence
 	private CopyOnWriteArrayList<DialogWrapper> dialogs = new CopyOnWriteArrayList<DialogWrapper>();
 	private Stack<TiWindowProxy> windowStack = new Stack<TiWindowProxy>();
@@ -145,15 +153,19 @@ public abstract class TiBaseActivity extends AppCompatActivity
 	public TiWindowProxy lwWindow;
 	public boolean isResumed = false;
 
+	public static boolean canFinishRoot = true;
+
 	private boolean overridenLayout;
 
-	public class DialogWrapper {
+	public class DialogWrapper
+	{
 		boolean isPersistent;
 		Dialog dialog;
 
 		WeakReference<TiBaseActivity> dialogActivity;
 
-		public DialogWrapper(Dialog d, boolean persistent, WeakReference<TiBaseActivity> activity) {
+		public DialogWrapper(Dialog d, boolean persistent, WeakReference<TiBaseActivity> activity)
+		{
 			isPersistent = persistent;
 			dialog = d;
 			dialogActivity = activity;
@@ -173,11 +185,13 @@ public abstract class TiBaseActivity extends AppCompatActivity
 			dialogActivity = da;
 		}
 
-		public Dialog getDialog() {
+		public Dialog getDialog()
+		{
 			return dialog;
 		}
 
-		public void setDialog(Dialog d) {
+		public void setDialog(Dialog d)
+		{
 			dialog = d;
 		}
 
@@ -219,7 +233,7 @@ public abstract class TiBaseActivity extends AppCompatActivity
 	{
 		proxy.onWindowFocusChange(false);
 
-		boolean isTopWindow = ( (!windowStack.isEmpty()) && (windowStack.peek() == proxy) ) ? true : false;
+		boolean isTopWindow = ((!windowStack.isEmpty()) && (windowStack.peek() == proxy)) ? true : false;
 		windowStack.remove(proxy);
 		totalWindowStack--;
 
@@ -228,6 +242,11 @@ public abstract class TiBaseActivity extends AppCompatActivity
 			TiWindowProxy nextWindow = windowStack.peek();
 			nextWindow.onWindowFocusChange(true);
 		}
+	}
+
+	public void resetTotalWindowStack()
+	{
+		totalWindowStack = 0;
 	}
 
 	/**
@@ -239,25 +258,7 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		return (windowStack.isEmpty()) ? null : windowStack.peek();
 	}
 
-	// could use a normal ConfigurationChangedListener but since only orientation changes are
-	// forwarded, create a separate interface in order to limit scope and maintain clarity
-	public static interface OrientationChangedListener
-	{
-		public void onOrientationChanged (int configOrientationMode, int width, int height);
-	}
-
-	public static void registerOrientationListener (OrientationChangedListener listener)
-	{
-		orientationChangedListener = listener;
-	}
-
-	public static void deregisterOrientationListener()
-	{
-		orientationChangedListener = null;
-	}
-
-	public static interface ConfigurationChangedListener
-	{
+	public static interface ConfigurationChangedListener {
 		public void onConfigurationChanged(TiBaseActivity activity, Configuration newConfig);
 	}
 
@@ -361,16 +362,6 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		configChangedListeners.remove(listener);
 	}
 
-	public void registerOrientationChangedListener (OrientationChangedListener listener)
-	{
-		orientationChangedListener = listener;
-	}
-
-	public void deregisterOrientationChangedListener()
-	{
-		orientationChangedListener = null;
-	}
-
 	protected boolean getIntentBoolean(String property, boolean defaultValue)
 	{
 		Intent intent = getIntent();
@@ -407,10 +398,10 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		return defaultValue;
 	}
 
-
 	protected void updateTitle()
 	{
-		if (window == null) return;
+		if (window == null)
+			return;
 
 		if (window.hasProperty(TiC.PROPERTY_TITLE)) {
 			String oldTitle = (String) getTitle();
@@ -426,8 +417,9 @@ public abstract class TiBaseActivity extends AppCompatActivity
 
 			if (!newTitle.equals(oldTitle)) {
 				final String fnewTitle = newTitle;
-				runOnUiThread(new Runnable(){
-					public void run() {
+				runOnUiThread(new Runnable() {
+					public void run()
+					{
 						setTitle(fnewTitle);
 					}
 				});
@@ -438,30 +430,36 @@ public abstract class TiBaseActivity extends AppCompatActivity
 	// Subclasses can override to provide a custom layout
 	protected View createLayout()
 	{
+		// Set up the view's layout.
 		LayoutArrangement arrangement = LayoutArrangement.DEFAULT;
-
 		String layoutFromIntent = getIntentString(TiC.INTENT_PROPERTY_LAYOUT, "");
 		if (layoutFromIntent.equals(TiC.LAYOUT_HORIZONTAL)) {
 			arrangement = LayoutArrangement.HORIZONTAL;
-
 		} else if (layoutFromIntent.equals(TiC.LAYOUT_VERTICAL)) {
 			arrangement = LayoutArrangement.VERTICAL;
 		}
 
-		// set to null for now, this will get set correctly in setWindowProxy()
-		return new TiCompositeLayout(this, arrangement, null);
+		// Create the root view to be used by the activity.
+		// - Set the layout's proxy to null for now. Will be set later via setWindowProxy().
+		// - Make it focusable so Android won't auto-focus on the first focusable child view in the window.
+		//   This makes it match iOS' behavior where no child view has the focus when a window is opened.
+		TiCompositeLayout compositeLayout = new TiCompositeLayout(this, arrangement, null);
+		compositeLayout.setFocusable(true);
+		compositeLayout.setFocusableInTouchMode(true);
+		compositeLayout.setDescendantFocusability(TiCompositeLayout.FOCUS_BEFORE_DESCENDANTS);
+		return compositeLayout;
 	}
 
-
 	@Override
-	public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+	public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults)
+	{
 		if (!callbackDataByPermission.isEmpty()) {
 			handlePermissionRequestResult(requestCode, permissions, grantResults);
 		}
-
 	}
 
-	private void handlePermissionRequestResult(Integer requestCode, String[] permissions, int[] grantResults) {
+	private void handlePermissionRequestResult(Integer requestCode, String[] permissions, int[] grantResults)
+	{
 		PermissionContextData cbd = callbackDataByPermission.get(requestCode);
 		if (cbd == null) {
 			return;
@@ -498,7 +496,6 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		}
 	}
 
-
 	/**
 	 * register permission request result callback for activity
 	 *
@@ -507,7 +504,9 @@ public abstract class TiBaseActivity extends AppCompatActivity
 	 *                 code, optional message and requestCode
 	 * @param context KrollObject as required by async callback pattern
 	 */
-	public static void registerPermissionRequestCallback(Integer requestCode, KrollFunction callback, KrollObject context) {
+	public static void registerPermissionRequestCallback(Integer requestCode, KrollFunction callback,
+														 KrollObject context)
+	{
 		if (callback != null && context != null) {
 			callbackDataByPermission.put(requestCode, new PermissionContextData(requestCode, callback, context));
 		}
@@ -522,8 +521,7 @@ public abstract class TiBaseActivity extends AppCompatActivity
 			// SYSTEM_UI_FLAG_FULLSCREEN is only available on Android 4.1 and higher, but as
 			// a general rule, you should design your app to hide the status bar whenever you
 			// hide the navigation bar.
-			int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-			              | View.SYSTEM_UI_FLAG_FULLSCREEN;
+			int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN;
 			decorView.setSystemUiVisibility(uiOptions);
 		}
 	}
@@ -540,8 +538,69 @@ public abstract class TiBaseActivity extends AppCompatActivity
 
 		setFullscreen(fullscreen);
 
+		// Add additional window flags to better handle fullscreen support on devices with notches.
+		{
+			// Fetch flags.
+			int uiFlags = getWindow().getDecorView().getSystemUiVisibility();
+			int allWindowFlags = windowFlags | getWindow().getAttributes().flags;
+
+			// If status bar is to be hidden, then we must also set the translucent status bar flag
+			// or else devices with a notch will show a black bar where the status bar used to be.
+			boolean isHidingStatusBar = (allWindowFlags & WindowManager.LayoutParams.FLAG_FULLSCREEN) != 0;
+			isHidingStatusBar |= (uiFlags & View.SYSTEM_UI_FLAG_FULLSCREEN) != 0;
+			isHidingStatusBar |= (uiFlags & View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN) != 0;
+			if (isHidingStatusBar) {
+				windowFlags |= WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS;
+			}
+
+			// If navigation bar is to be hidden, then we must also set its translucent flag
+			// or else devices with a notch will show a black bar where the navigation bar used to be.
+			if ((uiFlags & View.SYSTEM_UI_FLAG_HIDE_NAVIGATION) != 0) {
+				windowFlags |= WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
+			}
+		}
+
+		// Always allow screen cutouts/notches (such as the camera) to overlap window.
+		// Note: This won't overlap window's inner contents unless we call setFitsSystemWindows(true) down below,
+		//       which is only enabled when Titanium's "extendSafeArea" property is set true.
+		if (Build.VERSION.SDK_INT >= 28) {
+			WindowManager.LayoutParams params = getWindow().getAttributes();
+			params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+			getWindow().setAttributes(params);
+		}
+
+		// Add the flags provided via property 'windowFlags'.
 		if (windowFlags > 0) {
 			getWindow().addFlags(windowFlags);
+		}
+
+		// Remove translucent StatusBar/NavigationBar flags if window is not set up to extend beneath them.
+		// Not doing so will cause window to stretch beneath them anyways, but will fail to render there.
+		if (this.layout.getFitsSystemWindows() && !(this instanceof TiLaunchActivity)) {
+			int mask = WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS;
+			mask |= WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
+			if ((getWindow().getAttributes().flags & mask) != 0) {
+				String message = "You cannot use a translucent status bar or navigation bar unless you "
+								 + "set the window's '" + TiC.PROPERTY_EXTEND_SAFE_AREA + "' property to true.";
+				Log.w(TAG, message);
+				getWindow().clearFlags(mask);
+			}
+		}
+
+		// Update system UI flags with based on currently assigned translucency flags.
+		{
+			int systemUIFlags = 0;
+			int allWindowFlags = getWindow().getAttributes().flags;
+			if ((allWindowFlags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS) != 0) {
+				systemUIFlags |= View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+			}
+			if ((allWindowFlags & WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION) != 0) {
+				systemUIFlags |= View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+			}
+			if (systemUIFlags != 0) {
+				systemUIFlags |= getWindow().getDecorView().getSystemUiVisibility();
+				getWindow().getDecorView().setSystemUiVisibility(systemUIFlags);
+			}
 		}
 
 		if (modal) {
@@ -565,19 +624,22 @@ public abstract class TiBaseActivity extends AppCompatActivity
 
 	// Record if user has set a content view manually from hyperloop code during require of app.js!
 	@Override
-	public void setContentView(View view) {
+	public void setContentView(View view)
+	{
 		overridenLayout = true;
 		super.setContentView(view);
 	}
 
 	@Override
-	public void setContentView(int layoutResID) {
+	public void setContentView(int layoutResID)
+	{
 		overridenLayout = true;
 		super.setContentView(layoutResID);
 	}
 
 	@Override
-	public void setContentView(View view, LayoutParams params) {
+	public void setContentView(View view, LayoutParams params)
+	{
 		overridenLayout = true;
 		super.setContentView(view, params);
 	}
@@ -594,6 +656,7 @@ public abstract class TiBaseActivity extends AppCompatActivity
 
 		inForeground = true;
 		TiApplication tiApp = getTiApp();
+		this.safeAreaMonitor = new TiActivitySafeAreaMonitor(this);
 
 		if (tiApp.isRestartPending()) {
 			super.onCreate(savedInstanceState);
@@ -644,11 +707,22 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		// Doing this on every create in case the activity is externally created.
 		TiPlatformHelper.getInstance().intializeDisplayMetrics(this);
 
+		// Create the root content layout, if not done already.
 		if (layout == null) {
 			layout = createLayout();
 		}
-		if (intent != null && intent.hasExtra(TiC.PROPERTY_KEEP_SCREEN_ON)) {
-			layout.setKeepScreenOn(intent.getBooleanExtra(TiC.PROPERTY_KEEP_SCREEN_ON, layout.getKeepScreenOn()));
+
+		// Extend window's view under screen insets, if requested.
+		boolean extendSafeArea = false;
+		if (intent != null) {
+			extendSafeArea = intent.getBooleanExtra(TiC.PROPERTY_EXTEND_SAFE_AREA, false);
+		}
+		layout.setFitsSystemWindows(!extendSafeArea);
+
+		// Enable/disable timer used to turn off the screen if idle.
+		if ((intent != null) && intent.hasExtra(TiC.PROPERTY_KEEP_SCREEN_ON)) {
+			boolean keepScreenOn = intent.getBooleanExtra(TiC.PROPERTY_KEEP_SCREEN_ON, layout.getKeepScreenOn());
+			layout.setKeepScreenOn(keepScreenOn);
 		}
 
 		// Set the theme of the activity before calling super.onCreate().
@@ -664,7 +738,6 @@ public abstract class TiBaseActivity extends AppCompatActivity
 			getWindow().setUiOptions(ActivityInfo.UIOPTION_SPLIT_ACTION_BAR_WHEN_NARROW);
 		}
 
-
 		// we only want to set the current activity for good in the resume state but we need it right now.
 		// save off the existing current activity, set ourselves to be the new current activity temporarily
 		// so we don't run into problems when we give the proxy the event
@@ -679,7 +752,35 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		}
 		super.onCreate(savedInstanceState);
 
-		windowCreated(savedInstanceState);
+		// If activity is using Google's default ActionBar, then the below will return an ActionBar style handler
+		// intended to be called by onConfigurationChanged() which will resize its title bar and font.
+		// Note: We need to do this since we override "configChanges" in the "AndroidManifest.xml".
+		//       Default ActionBar height is typically 56dp for portrait and 48dp for landscape.
+		this.actionBarStyleHandler = TiActionBarStyleHandler.from(this);
+
+		// If Google's ActionBar is being used, then add it to the top inset height. (Exclude from safe-area.)
+		// Note: If a toolbar is passed to AppCompatActivity.setSupportActionBar(), then ActionBar is a wrapper
+		//       around that toolbar under our content view and is included in the safe-area.
+		this.safeAreaMonitor.setActionBarAddedAsInset(this.actionBarStyleHandler != null);
+
+		// Start handling safe-area inset changes.
+		this.safeAreaMonitor.setOnChangedListener(new TiActivitySafeAreaMonitor.OnChangedListener() {
+			@Override
+			public void onChanged(TiActivitySafeAreaMonitor monitor)
+			{
+				TiWindowProxy windowProxy = TiBaseActivity.this.window;
+				if (windowProxy != null) {
+					windowProxy.fireSafeAreaChangedEvent();
+				}
+			}
+		});
+		this.safeAreaMonitor.start();
+
+		try {
+			windowCreated(savedInstanceState);
+		} catch (Throwable t) {
+			Thread.getDefaultUncaughtExceptionHandler().uncaughtException(null, t);
+		}
 
 		if (activityProxy != null) {
 			dispatchCallback(TiC.PROPERTY_ON_CREATE, null);
@@ -691,7 +792,7 @@ public abstract class TiBaseActivity extends AppCompatActivity
 
 		// If user changed the layout during app.js load, keep that
 		if (!overridenLayout) {
-			setContentView(layout);
+			super.setContentView(layout);
 		}
 
 		// Set the title of the activity after setContentView.
@@ -706,36 +807,11 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		// for later use
 		originalOrientationMode = getRequestedOrientation();
 
-		orientationListener = new OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL) {
-			@Override
-			public void onOrientationChanged(int orientation) {
-			    DisplayMetrics dm = new DisplayMetrics();
-			    getWindowManager().getDefaultDisplay().getMetrics(dm);
-			    int width = dm.widthPixels;
-			    int height = dm.heightPixels;
-			    int rotation = getWindowManager().getDefaultDisplay().getRotation();
-
-			    if ((rotation == Surface.ROTATION_90 || rotation == Surface.ROTATION_270)
-			            && rotation != previousOrientation) {
-			        callOrientationChangedListener(TiApplication.getAppRootOrCurrentActivity(), width, height, rotation);
-			    } else if ((rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180)
-			            && rotation != previousOrientation) {
-			        callOrientationChangedListener(TiApplication.getAppRootOrCurrentActivity(), width, height, rotation);
-			    }
-			}
-		};
-
-		if (orientationListener.canDetectOrientation() == true) {
-			orientationListener.enable();
-		} else {
-			Log.w(TAG, "Cannot detect orientation");
-			orientationListener.disable();
-		}
-
 		if (window != null) {
 			window.onWindowActivityCreated();
 		}
-		synchronized (lifecycleListeners.synchronizedList()) {
+		synchronized (lifecycleListeners.synchronizedList())
+		{
 			for (OnLifecycleEvent listener : lifecycleListeners.nonNull()) {
 				try {
 					TiLifecycle.fireLifecycleEvent(this, listener, savedInstanceState, TiLifecycle.LIFECYCLE_ON_CREATE);
@@ -743,6 +819,27 @@ public abstract class TiBaseActivity extends AppCompatActivity
 				} catch (Throwable t) {
 					Log.e(TAG, "Error dispatching lifecycle event: " + t.getMessage(), t);
 				}
+			}
+		}
+		setCustomActionBar();
+	}
+
+	private void setCustomActionBar()
+	{
+		if (activityProxy.hasProperty(TiC.PROPERTY_SUPPORT_TOOLBAR)) {
+			try {
+				this.setSupportActionBar(
+					((Toolbar) ((TiToolbarProxy) activityProxy.getProperty(TiC.PROPERTY_SUPPORT_TOOLBAR))
+						 .getToolbarInstance()));
+			} catch (RuntimeException e) {
+				Log.e(
+					TAG,
+					"Attempting to use Toolbar as ActionBar without disabling the default ActionBar in the current theme.\n"
+						+ "You must set 'windowActionBar' to false in your current theme. Or use one of the following themes:\n"
+						+ " - Theme.Titanium\n - Theme.AppCompat.Translucent.NoTitleBar\n - Theme.AppCompat.NoTitleBar\n"
+						+ "Which have ActionBar disabled by default.");
+				TiApplication.terminateActivityStack();
+				finish();
 			}
 		}
 	}
@@ -755,6 +852,11 @@ public abstract class TiBaseActivity extends AppCompatActivity
 	public boolean isInForeground()
 	{
 		return inForeground;
+	}
+
+	public boolean isDestroyed()
+	{
+		return onDestroyFired;
 	}
 
 	protected void sendMessage(final int msgId)
@@ -817,16 +919,20 @@ public abstract class TiBaseActivity extends AppCompatActivity
 	/**
 	 * See TiActivitySupport.launchIntentSenderForResult for more details.
 	 */
-	public void launchIntentSenderForResult(IntentSender intent, int requestCode, Intent fillInIntent, int flagsMask, int flagsValues, int extraFlags, Bundle options, TiActivityResultHandler resultHandler)
+	public void launchIntentSenderForResult(IntentSender intent, int requestCode, Intent fillInIntent, int flagsMask,
+											int flagsValues, int extraFlags, Bundle options,
+											TiActivityResultHandler resultHandler)
 	{
-		getSupportHelper().launchIntentSenderForResult(intent, requestCode, fillInIntent, flagsMask, flagsValues, extraFlags, options, resultHandler);
+		getSupportHelper().launchIntentSenderForResult(intent, requestCode, fillInIntent, flagsMask, flagsValues,
+													   extraFlags, options, resultHandler);
 	}
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data)
 	{
 		super.onActivityResult(requestCode, resultCode, data);
-		synchronized (onActivityResultListeners.synchronizedList()) {
+		synchronized (onActivityResultListeners.synchronizedList())
+		{
 			for (OnActivityResultEvent listener : onActivityResultListeners.nonNull()) {
 				try {
 					TiLifecycle.fireOnActivityResultEvent(this, listener, requestCode, resultCode, data);
@@ -841,7 +947,8 @@ public abstract class TiBaseActivity extends AppCompatActivity
 	@Override
 	public void onBackPressed()
 	{
-		synchronized (interceptOnBackPressedListeners.synchronizedList()) {
+		synchronized (interceptOnBackPressedListeners.synchronizedList())
+		{
 			for (interceptOnBackPressedEvent listener : interceptOnBackPressedListeners.nonNull()) {
 				try {
 					if (listener.interceptOnBackPressed()) {
@@ -865,7 +972,9 @@ public abstract class TiBaseActivity extends AppCompatActivity
 			KrollFunction onBackCallback = (KrollFunction) topWindow.getProperty(TiC.PROPERTY_ON_BACK);
 			onBackCallback.callAsync(activityProxy.getKrollObject(), new Object[] {});
 		}
-		if (topWindow == null || (topWindow != null && !topWindow.hasProperty(TiC.PROPERTY_ON_BACK) && !topWindow.hasListeners(TiC.EVENT_ANDROID_BACK))) {
+		if (topWindow == null
+			|| (topWindow != null && !topWindow.hasProperty(TiC.PROPERTY_ON_BACK)
+				&& !topWindow.hasListeners(TiC.EVENT_ANDROID_BACK))) {
 			// check Ti.UI.Window.exitOnClose and either
 			// exit the application or send to background
 			if (topWindow != null) {
@@ -884,7 +993,7 @@ public abstract class TiBaseActivity extends AppCompatActivity
 					}
 					return;
 
-				// root window has exitOnClose set as false, send to background
+					// root window has exitOnClose set as false, send to background
 				} else if (totalWindowStack <= 1) {
 					Log.d(TAG, "onBackPressed: suspend to background");
 					this.moveTaskToBack(true);
@@ -914,8 +1023,8 @@ public abstract class TiBaseActivity extends AppCompatActivity
 			return super.dispatchKeyEvent(event);
 		}
 
-		switch(event.getKeyCode()) {
-			case KeyEvent.KEYCODE_BACK : {
+		switch (event.getKeyCode()) {
+			case KeyEvent.KEYCODE_BACK: {
 
 				if (event.getAction() == KeyEvent.ACTION_UP) {
 					String backEvent = "android:back";
@@ -933,11 +1042,10 @@ public abstract class TiBaseActivity extends AppCompatActivity
 						proxy.fireEvent(backEvent, null);
 						handled = true;
 					}
-
 				}
 				break;
 			}
-			case KeyEvent.KEYCODE_CAMERA : {
+			case KeyEvent.KEYCODE_CAMERA: {
 				if (window.hasListeners(TiC.EVENT_ANDROID_CAMERA)) {
 					if (event.getAction() == KeyEvent.ACTION_UP) {
 						window.fireEvent(TiC.EVENT_ANDROID_CAMERA, null);
@@ -954,7 +1062,7 @@ public abstract class TiBaseActivity extends AppCompatActivity
 
 				break;
 			}
-			case KeyEvent.KEYCODE_FOCUS : {
+			case KeyEvent.KEYCODE_FOCUS: {
 				if (window.hasListeners(TiC.EVENT_ANDROID_FOCUS)) {
 					if (event.getAction() == KeyEvent.ACTION_UP) {
 						window.fireEvent(TiC.EVENT_ANDROID_FOCUS, null);
@@ -971,7 +1079,7 @@ public abstract class TiBaseActivity extends AppCompatActivity
 
 				break;
 			}
-			case KeyEvent.KEYCODE_SEARCH : {
+			case KeyEvent.KEYCODE_SEARCH: {
 				if (window.hasListeners(TiC.EVENT_ANDROID_SEARCH)) {
 					if (event.getAction() == KeyEvent.ACTION_UP) {
 						window.fireEvent(TiC.EVENT_ANDROID_SEARCH, null);
@@ -988,7 +1096,7 @@ public abstract class TiBaseActivity extends AppCompatActivity
 
 				break;
 			}
-			case KeyEvent.KEYCODE_VOLUME_UP : {
+			case KeyEvent.KEYCODE_VOLUME_UP: {
 				if (window.hasListeners(TiC.EVENT_ANDROID_VOLUP)) {
 					if (event.getAction() == KeyEvent.ACTION_UP) {
 						window.fireEvent(TiC.EVENT_ANDROID_VOLUP, null);
@@ -1005,7 +1113,7 @@ public abstract class TiBaseActivity extends AppCompatActivity
 
 				break;
 			}
-			case KeyEvent.KEYCODE_VOLUME_DOWN : {
+			case KeyEvent.KEYCODE_VOLUME_DOWN: {
 				if (window.hasListeners(TiC.EVENT_ANDROID_VOLDOWN)) {
 					if (event.getAction() == KeyEvent.ACTION_UP) {
 						window.fireEvent(TiC.EVENT_ANDROID_VOLDOWN, null);
@@ -1043,7 +1151,8 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		}
 
 		boolean listenerExists = false;
-		synchronized (onCreateOptionsMenuListeners.synchronizedList()) {
+		synchronized (onCreateOptionsMenuListeners.synchronizedList())
+		{
 			for (OnCreateOptionsMenuEvent listener : onCreateOptionsMenuListeners.nonNull()) {
 				try {
 					listenerExists = true;
@@ -1069,12 +1178,16 @@ public abstract class TiBaseActivity extends AppCompatActivity
 				if (activityProxy != null) {
 					ActionBarProxy actionBarProxy = activityProxy.getActionBar();
 					if (actionBarProxy != null) {
-						KrollFunction onHomeIconItemSelected = (KrollFunction) actionBarProxy
-							.getProperty(TiC.PROPERTY_ON_HOME_ICON_ITEM_SELECTED);
+						KrollFunction onHomeIconItemSelected =
+							(KrollFunction) actionBarProxy.getProperty(TiC.PROPERTY_ON_HOME_ICON_ITEM_SELECTED);
 						KrollDict event = new KrollDict();
 						event.put(TiC.EVENT_PROPERTY_SOURCE, actionBarProxy);
 						if (onHomeIconItemSelected != null) {
 							onHomeIconItemSelected.call(activityProxy.getKrollObject(), new Object[] { event });
+
+							// handle NavigationWindow back press
+						} else if (window.getNavigationWindow() != null) {
+							onBackPressed();
 						}
 					}
 				}
@@ -1088,7 +1201,8 @@ public abstract class TiBaseActivity extends AppCompatActivity
 	public boolean onPrepareOptionsMenu(Menu menu)
 	{
 		boolean listenerExists = false;
-		synchronized (onPrepareOptionsMenuListeners.synchronizedList()) {
+		synchronized (onPrepareOptionsMenuListeners.synchronizedList())
+		{
 			for (OnPrepareOptionsMenuEvent listener : onPrepareOptionsMenuListeners.nonNull()) {
 				try {
 					listenerExists = true;
@@ -1101,22 +1215,18 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		return menuHelper.onPrepareOptionsMenu(super.onPrepareOptionsMenu(menu) || listenerExists, menu);
 	}
 
-	public static void callOrientationChangedListener(Activity activity, int width, int height, int rotation)
-	{
-		if (activity != null) {
-			int currentOrientation = activity.getWindowManager().getDefaultDisplay().getRotation();
-			if (orientationChangedListener != null && previousOrientation != currentOrientation) {
-				previousOrientation = currentOrientation;
-				orientationChangedListener.onOrientationChanged (currentOrientation, width, height);
-			}
-		}
-	}
-
 	@Override
 	public void onConfigurationChanged(Configuration newConfig)
 	{
 		super.onConfigurationChanged(newConfig);
 
+		// Update ActionBar height and font size, if needed.
+		// Handler will only be null if activity was set up without a title bar.
+		if (this.actionBarStyleHandler != null) {
+			this.actionBarStyleHandler.onConfigurationChanged(newConfig);
+		}
+
+		// Notify all listener of this configuration change.
 		for (WeakReference<ConfigurationChangedListener> listener : configChangedListeners) {
 			if (listener.get() != null) {
 				listener.get().onConfigurationChanged(this, newConfig);
@@ -1181,25 +1291,31 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		// TODO stub
 	}
 
-	private void dispatchCallback(final String name, KrollDict data) {
+	private void dispatchCallback(final String name, KrollDict data)
+	{
 		if (data == null) {
 			data = new KrollDict();
 		}
 		data.put("source", activityProxy);
 
 		final KrollDict d = data;
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				activityProxy.callPropertySync(name, new Object[] { d });
-			}
-		});
+		if (TiApplication.isUIThread()) {
+			activityProxy.callPropertyAsync(name, new Object[] { d });
+		} else {
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run()
+				{
+					activityProxy.callPropertySync(name, new Object[] { d });
+				}
+			});
+		}
 	}
 
 	private void releaseDialogs(boolean finish)
 	{
 		//clean up dialogs when activity is pausing or finishing
-		for (Iterator<DialogWrapper> iter = dialogs.iterator(); iter.hasNext(); ) {
+		for (Iterator<DialogWrapper> iter = dialogs.iterator(); iter.hasNext();) {
 			DialogWrapper p = iter.next();
 			Dialog dialog = p.getDialog();
 			boolean persistent = p.getPersistent();
@@ -1217,7 +1333,8 @@ public abstract class TiBaseActivity extends AppCompatActivity
 	@Override
 	public void onWindowFocusChanged(boolean hasFocus)
 	{
-		synchronized (windowFocusChangedListeners.synchronizedList()) {
+		synchronized (windowFocusChangedListeners.synchronizedList())
+		{
 			for (OnWindowFocusChangedEvent listener : windowFocusChangedListeners.nonNull()) {
 				try {
 					listener.onWindowFocusChanged(hasFocus);
@@ -1273,8 +1390,14 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		if (activityProxy != null) {
 			activityProxy.fireEvent(TiC.EVENT_PAUSE, null);
 		}
+		KrollModule appModule = tiApp.getModuleByName("App");
+		if (appModule != null) {
+			appModule.fireEvent(TiC.EVENT_PAUSE, null);
+			appModule.fireEvent(TiC.EVENT_PAUSED, null);
+		}
 
-		synchronized (lifecycleListeners.synchronizedList()) {
+		synchronized (lifecycleListeners.synchronizedList())
+		{
 			for (OnLifecycleEvent listener : lifecycleListeners.nonNull()) {
 				try {
 					TiLifecycle.fireLifecycleEvent(this, listener, TiLifecycle.LIFECYCLE_ON_PAUSE);
@@ -1283,11 +1406,6 @@ public abstract class TiBaseActivity extends AppCompatActivity
 					Log.e(TAG, "Error dispatching lifecycle event: " + t.getMessage(), t);
 				}
 			}
-		}
-
-		// Checkpoint for ti.background event
-		if (tiApp != null && TiApplication.getInstance().isAnalyticsEnabled()) {
-			analytics.sendAppBackgroundEvent();
 		}
 	}
 
@@ -1324,11 +1442,30 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		tiApp.setCurrentActivity(this, this);
 		TiApplication.updateActivityTransitionState(false);
 
+		// handle shortcut intents
+		Intent intent = getIntent();
+		String shortcutId =
+			intent.hasExtra(TiC.EVENT_PROPERTY_SHORTCUT) ? intent.getStringExtra(TiC.EVENT_PROPERTY_SHORTCUT) : null;
+		if (shortcutId != null) {
+			KrollModule appModule = TiApplication.getInstance().getModuleByName("App");
+			if (appModule != null) {
+				KrollDict data = new KrollDict();
+				data.put(TiC.PROPERTY_ID, shortcutId);
+				appModule.fireEvent(TiC.EVENT_SHORTCUT_ITEM_CLICK, data);
+			}
+		}
+
 		if (activityProxy != null) {
 			activityProxy.fireEvent(TiC.EVENT_RESUME, null);
 		}
+		KrollModule appModule = tiApp.getModuleByName("App");
+		if (appModule != null) {
+			appModule.fireEvent(TiC.EVENT_RESUME, null);
+			appModule.fireEvent(TiC.EVENT_RESUMED, null);
+		}
 
-		synchronized (lifecycleListeners.synchronizedList()) {
+		synchronized (lifecycleListeners.synchronizedList())
+		{
 			for (OnLifecycleEvent listener : lifecycleListeners.nonNull()) {
 				try {
 					TiLifecycle.fireLifecycleEvent(this, listener, TiLifecycle.LIFECYCLE_ON_RESUME);
@@ -1340,12 +1477,6 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		}
 
 		isResumed = true;
-
-		// Checkpoint for ti.foreground event
-		//String deployType = tiApp.getAppProperties().getString("ti.deploytype", "unknown");
-		if(TiApplication.getInstance().isAnalyticsEnabled()){
-			analytics.sendAppForegroundEvent();
-		}
 	}
 
 	@Override
@@ -1395,7 +1526,8 @@ public abstract class TiBaseActivity extends AppCompatActivity
 			tiApp.setCurrentActivity(this, tempCurrentActivity);
 		}
 
-		synchronized (lifecycleListeners.synchronizedList()) {
+		synchronized (lifecycleListeners.synchronizedList())
+		{
 			for (OnLifecycleEvent listener : lifecycleListeners.nonNull()) {
 				try {
 					TiLifecycle.fireLifecycleEvent(this, listener, TiLifecycle.LIFECYCLE_ON_START);
@@ -1405,9 +1537,6 @@ public abstract class TiBaseActivity extends AppCompatActivity
 				}
 			}
 		}
-		// store current configuration orientation
-		// This fixed bug with double orientation chnage firing when activity starts in landscape
-		previousOrientation = getWindowManager().getDefaultDisplay().getRotation();
 	}
 
 	@Override
@@ -1436,7 +1565,8 @@ public abstract class TiBaseActivity extends AppCompatActivity
 			activityProxy.fireEvent(TiC.EVENT_STOP, null);
 		}
 
-		synchronized (lifecycleListeners.synchronizedList()) {
+		synchronized (lifecycleListeners.synchronizedList())
+		{
 			for (OnLifecycleEvent listener : lifecycleListeners.nonNull()) {
 				try {
 					TiLifecycle.fireLifecycleEvent(this, listener, TiLifecycle.LIFECYCLE_ON_STOP);
@@ -1446,7 +1576,6 @@ public abstract class TiBaseActivity extends AppCompatActivity
 				}
 			}
 		}
-		KrollRuntime.suggestGC();
 	}
 
 	@Override
@@ -1489,6 +1618,18 @@ public abstract class TiBaseActivity extends AppCompatActivity
 
 	@Override
 	/**
+	 * When a key, touch, or trackball event is dispatched to the activity, this method fires the
+	 * javascript 'userinteraction' event.
+	 */
+	public void onUserInteraction()
+	{
+		TiApplication.getInstance().fireAppEvent(TiC.EVENT_USER_INTERACTION, null);
+
+		super.onUserInteraction();
+	}
+
+	@Override
+	/**
 	 * When the activity is about to go into the background as a result of user choice, this method fires the
 	 * javascript 'userleavehint' event.
 	 */
@@ -1527,6 +1668,11 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		//Clean up dialogs when activity is destroyed.
 		releaseDialogs(true);
 
+		// Stop listening for safe-area inset changes.
+		if (this.safeAreaMonitor != null) {
+			this.safeAreaMonitor.stop();
+		}
+
 		if (tiApp.isRestartPending()) {
 			super.onDestroy();
 			if (!isFinishing()) {
@@ -1535,7 +1681,8 @@ public abstract class TiBaseActivity extends AppCompatActivity
 			return;
 		}
 
-		synchronized (lifecycleListeners.synchronizedList()) {
+		synchronized (lifecycleListeners.synchronizedList())
+		{
 			for (OnLifecycleEvent listener : lifecycleListeners.nonNull()) {
 				try {
 					TiLifecycle.fireLifecycleEvent(this, listener, TiLifecycle.LIFECYCLE_ON_DESTROY);
@@ -1544,11 +1691,6 @@ public abstract class TiBaseActivity extends AppCompatActivity
 					Log.e(TAG, "Error dispatching lifecycle event: " + t.getMessage(), t);
 				}
 			}
-		}
-
-		if (orientationListener != null) {
-			orientationListener.disable();
-			orientationListener = null;
 		}
 
 		super.onDestroy();
@@ -1573,15 +1715,20 @@ public abstract class TiBaseActivity extends AppCompatActivity
 
 		//LW windows
 		if (window == null && view != null) {
-			view.releaseViews();
 			view.release();
+			view = null;
+		}
+		if (view != null) {
+			view.releaseViews();
 			view = null;
 		}
 
 		if (window != null) {
+			if (windowStack.contains(window)) {
+				removeWindowFromStack(window);
+			}
 			window.closeFromActivity(isFinishing);
 			window.releaseViews();
-			window.releaseKroll();
 			window = null;
 		}
 
@@ -1598,7 +1745,6 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		// Don't dispose the runtime if the activity is forced to destroy by Android,
 		// so we can recover the activity later.
 		KrollRuntime.decrementActivityRefCount(isFinishing);
-		KrollRuntime.suggestGC();
 	}
 
 	@Override
@@ -1612,7 +1758,8 @@ public abstract class TiBaseActivity extends AppCompatActivity
 			outState.putInt("supportHelperId", supportHelperId);
 		}
 
-		synchronized (instanceStateListeners.synchronizedList()) {
+		synchronized (instanceStateListeners.synchronizedList())
+		{
 			for (OnInstanceStateEvent listener : instanceStateListeners.nonNull()) {
 				try {
 					TiLifecycle.fireInstanceStateEvent(outState, listener, TiLifecycle.ON_SAVE_INSTANCE_STATE);
@@ -1635,10 +1782,12 @@ public abstract class TiBaseActivity extends AppCompatActivity
 				Log.e(TAG, "Unable to retrieve the activity support helper.");
 			}
 		}
-		synchronized (instanceStateListeners.synchronizedList()) {
+		synchronized (instanceStateListeners.synchronizedList())
+		{
 			for (OnInstanceStateEvent listener : instanceStateListeners.nonNull()) {
 				try {
-					TiLifecycle.fireInstanceStateEvent(savedInstanceState, listener, TiLifecycle.ON_RESTORE_INSTANCE_STATE);
+					TiLifecycle.fireInstanceStateEvent(savedInstanceState, listener,
+													   TiLifecycle.ON_RESTORE_INSTANCE_STATE);
 				} catch (Throwable t) {
 					Log.e(TAG, "Error dispatching OnInstanceStateEvent: " + t.getMessage(), t);
 				}
@@ -1660,7 +1809,7 @@ public abstract class TiBaseActivity extends AppCompatActivity
 
 	protected boolean shouldFinishRootActivity()
 	{
-		return getIntentBoolean(TiC.INTENT_PROPERTY_FINISH_ROOT, false);
+		return canFinishRoot && getIntentBoolean(TiC.INTENT_PROPERTY_FINISH_ROOT, false);
 	}
 
 	@Override
@@ -1738,10 +1887,46 @@ public abstract class TiBaseActivity extends AppCompatActivity
 		// 1. all the activities have been killed and the runtime has been disposed or
 		// 2. the app's hosting process has been killed. In this case, onDestroy or any other method
 		// is not called. We can check the status of the root activity to detect this situation.
-		if (savedInstanceState != null && !(activity instanceof TiLaunchActivity) &&
-				(KrollRuntime.isDisposed() || TiApplication.getInstance().rootActivityLatch.getCount() != 0)) {
+		if (savedInstanceState != null && !(activity instanceof TiLaunchActivity)
+			&& (KrollRuntime.isDisposed() || TiApplication.getInstance().rootActivityLatch.getCount() != 0)) {
 			return true;
 		}
 		return false;
+	}
+
+	public boolean hasSustainMode()
+	{
+		PowerManager manager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+			return manager.isSustainedPerformanceModeSupported();
+		}
+		return false;
+	}
+
+	public void setSustainMode(boolean sustainMode)
+	{
+		if (hasSustainMode() && this.sustainMode != sustainMode) {
+			getWindow().setSustainedPerformanceMode(sustainMode);
+			this.sustainMode = sustainMode;
+		} else {
+			Log.w(TAG, "sustainedPerformanceMode is not supported on this device");
+		}
+	}
+
+	/**
+	 * Gets the safe area in pixels, relative to the root decor view. This is the region between
+	 * the top/bottom/left/right insets that overlap the view's content such as a translucent
+	 * status bar, translucent navigation bar, or screen notches.
+	 * @return
+	 * Returns the safe area region in pixels relative to the root decor view.
+	 * <p>
+	 * Returns null if activity's root view is not available, such as after it's been destroyed.
+	 */
+	public Rect getSafeAreaRect()
+	{
+		if (this.safeAreaMonitor == null) {
+			return null;
+		}
+		return this.safeAreaMonitor.getSafeAreaRect();
 	}
 }

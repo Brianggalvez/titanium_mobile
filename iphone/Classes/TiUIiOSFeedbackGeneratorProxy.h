@@ -4,18 +4,18 @@
  * Licensed under the terms of the Apache Public License
  * Please see the LICENSE included with this distribution for details.
  */
-#if IS_XCODE_8
+
 #ifdef USE_TI_UIIOSFEEDBACKGENERATOR
 
-#import "TiProxy.h"
+#import <TitaniumKit/TiProxy.h>
 
 /**
  * Enumeration to handle the feedback generator type in this proxy.
  */
 typedef NS_ENUM(NSInteger, TiUIiOSFeedbackGeneratorType) {
-    TiUIiOSFeedbackGeneratorTypeSelection = 0,
-    TiUIiOSFeedbackGeneratorTypeImpact = 1,
-    TiUIiOSFeedbackGeneratorTypeNotification = 2
+  TiUIiOSFeedbackGeneratorTypeSelection = 0,
+  TiUIiOSFeedbackGeneratorTypeImpact = 1,
+  TiUIiOSFeedbackGeneratorTypeNotification = 2
 };
 
 /**
@@ -25,8 +25,8 @@ typedef NS_ENUM(NSInteger, TiUIiOSFeedbackGeneratorType) {
  * haptic feedbacks.
  */
 @interface TiUIiOSFeedbackGeneratorProxy : TiProxy {
-    UIFeedbackGenerator *generator;
-    TiUIiOSFeedbackGeneratorType type;
+  UIFeedbackGenerator *generator;
+  TiUIiOSFeedbackGeneratorType type;
 }
 
 /**
@@ -55,5 +55,4 @@ typedef NS_ENUM(NSInteger, TiUIiOSFeedbackGeneratorType) {
 
 @end
 
-#endif
 #endif

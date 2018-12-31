@@ -7,18 +7,18 @@
 #ifdef USE_TI_UIIOSPROGRESSBARSTYLE
 
 #import "TiUIiOSProgressBarStyleProxy.h"
-#import "TiBase.h"
+#import <TitaniumKit/TiBase.h>
 
 @implementation TiUIiOSProgressBarStyleProxy
 
--(NSString*)apiName
+- (NSString *)apiName
 {
-    return @"Ti.UI.iOS.ProgressBarStyle";
+  return @"Ti.UI.iOS.ProgressBarStyle";
 }
 
-MAKE_SYSTEM_PROP(PLAIN,UIProgressViewStyleDefault);
-MAKE_SYSTEM_PROP(DEFAULT,UIProgressViewStyleDefault);
-MAKE_SYSTEM_PROP(BAR,UIProgressViewStyleBar);
+MAKE_SYSTEM_PROP(PLAIN, UIProgressViewStyleDefault);
+MAKE_SYSTEM_PROP(DEFAULT, UIProgressViewStyleDefault);
+MAKE_SYSTEM_PROP(BAR, UIProgressViewStyleBar);
 
 @end
 

@@ -1,95 +1,24 @@
-var exec = require('child_process').exec,
-	path = require('path'),
+'use strict';
+
+const path = require('path'),
 	async = require('async'),
 	fs = require('fs-extra'),
-	appc = require('node-appc'), // TODO Can we remove this dependency? Brings in a lot of transitive dependencies
-	request = require('request'), // TODO Can we remove this dependency? Brings in a lot of transitive dependencies
-	temp = require('temp'),
 	utils = require('./utils'),
+	{ spawn } = require('child_process'),  // eslint-disable-line security/detect-child-process
 	copyFiles = utils.copyFiles,
 	copyAndModifyFile = utils.copyAndModifyFile,
-	copyAndModifyFiles = utils.copyAndModifyFiles,
 	globCopy = utils.globCopy,
+	globCopyFlat = utils.globCopyFlat,
 	ROOT_DIR = path.join(__dirname, '..'),
 	IOS_ROOT = path.join(ROOT_DIR, 'iphone'),
-	SUPPORT_DIR = path.join(ROOT_DIR, 'support'),
-	IOS_LIB = path.join(IOS_ROOT, 'lib'),
-	TI_CORE_VERSION = 24;
-
-function gunzip(gzFile, destFile, next) {
-	console.log('Gunzipping ' + gzFile + ' to ' + destFile);
-	exec('gunzip -dc "' + gzFile + '" > "' + destFile + '"' , function (err, stdout, stderr) {
-		if (err) {
-			return next(err);
-		}
-		next();
-	});
-}
-
-function downloadURL(url, callback) {
-	console.log('Downloading %s', url);
-
-	var tempName = temp.path({ suffix: '.gz' }),
-		tempDir = path.dirname(tempName);
-	fs.existsSync(tempDir) || fs.mkdirsSync(tempDir);
-
-	var tempStream = fs.createWriteStream(tempName),
-		req = request({ url: url });
-
-	req.pipe(tempStream);
-
-	req.on('error', function (err) {
-		fs.existsSync(tempName) && fs.unlinkSync(tempName);
-		console.log();
-		console.error('Failed to download: %s', err.toString());
-		callback(err);
-	});
-
-	req.on('response', function (req) {
-		if (req.statusCode >= 400) {
-			// something went wrong, abort
-			console.log();
-			console.error('Request failed with HTTP status code %s %s', req.statusCode, req.statusMessage);
-			return callback(err);
-		} else if (req.headers['content-length']) {
-			// we know how big the file is, display the progress bar
-			var total = parseInt(req.headers['content-length']),
-				bar = new appc.progress('  :paddedPercent [:bar] :etas', {
-				complete: '='.cyan,
-				incomplete: '.'.grey,
-				width: 40,
-				total: total
-			});
-
-			req.on('data', function (buffer) {
-				bar.tick(buffer.length);
-			});
-
-			tempStream.on('close', function () {
-				if (bar) {
-					bar.tick(total);
-					console.log('\n');
-				}
-				callback(null, tempName);
-			});
-		} else {
-			// we don't know how big the file is, display a spinner
-			var busy = new appc.busyindicator;
-			busy.start();
-
-			tempStream.on('close', function () {
-				busy && busy.stop();
-				console.log();
-				callback(null, tempName);
-			});
-		}
-	});
-}
+	IOS_LIB = path.join(IOS_ROOT, 'lib');
 
 /**
- * @param {Object} options
+ * @param {Object} options options object
  * @param {String} options.sdkVersion version of Titanium SDK
  * @param {String} options.gitHash SHA of Titanium SDK HEAD
+ * @param {String} options.timestamp Value injected for Ti.buildDate
+ * @constructor
  */
 function IOS(options) {
 	this.sdkVersion = options.sdkVersion;
@@ -102,87 +31,98 @@ IOS.prototype.clean = function (next) {
 	next();
 };
 
-IOS.prototype.fetchLibTiCore = function (next) {
-	var url = 'http://timobile.appcelerator.com.s3.amazonaws.com/libTiCore-' + TI_CORE_VERSION + '.a.gz',
-		dest = path.join(IOS_LIB, 'libTiCore.a'),
-		markerFile = path.join(IOS_LIB, TI_CORE_VERSION.toString() + '.txt');
+IOS.prototype.build = function (next) {
+	console.log('Building TitaniumKit ...');
 
-	// Do we have the latest libTiCore?
-	if (fs.existsSync(dest) && fs.existsSync(markerFile)) {
-		return next();
-	}
+	const child = spawn(path.join(ROOT_DIR, 'support', 'iphone', 'build_titaniumkit.sh'), [ '-v', this.sdkVersion, '-t', this.timestamp, '-h', this.gitHash ]);
 
-	console.log('You don\'t seem to have the appropriate thirdparty files. I\'ll fetch them.');
-	console.log('This could take awhile.. Might want to grab a cup of Joe or make fun of Nolan.');
+	child.stdout.on('data', (data) => {
+		console.log(`\n${data}`);
+	});
 
-	downloadURL(url, function (err, file) {
-		if (err) {
+	child.stderr.on('data', (data) => {
+		console.log(`\n${data}`);
+	});
+
+	child.on('exit', code => {
+		if (code) {
+			const err = new Error(`TitaniumKit build exited with code ${code}`);
+			console.error(err);
 			return next(err);
 		}
-		gunzip(file, dest, function (err) {
-			if (err) {
-				return next(err);
-			}
-			// Place "marker" file
-			fs.writeFile(markerFile, 'DO NOT DELETE THIS FILE', next);
-		});
+
+		console.log('TitaniumKit built successfully!');
+		return next();
 	});
 };
 
-IOS.prototype.build = function (next) {
-	this.fetchLibTiCore(next);
-}
-
 IOS.prototype.package = function (packager, next) {
-	// FIXME This is a hot mess. Why can't we place artifacts in their proper location already like mobileweb or Windows?
+	// FIXME This is a hot mess. Why can't we place artifacts in their proper location already like Windows?
 	console.log('Zipping iOS platform...');
-	var DEST_IOS = path.join(packager.zipSDKDir, 'iphone');
+	const DEST_IOS = path.join(packager.zipSDKDir, 'iphone');
 
 	async.parallel([
-		this.fetchLibTiCore.bind(this),
 		function (callback) {
 			async.series([
-				function (cb) {
-					globCopy('**/*.h', path.join(IOS_ROOT, 'Classes'), path.join(DEST_IOS, 'include'), cb);
+				// Copy legacy copies of TiBase.h, TiApp.h etc into 'include/' to retain backwards compatibility in SDK 8.0.0
+				// TODO: Inject a deprecation warning if used and remove in SDK 9.0.0
+				function copyLegacyCoreHeaders (cb) {
+					globCopyFlat('**/*.h', path.join(IOS_ROOT, 'TitaniumKit', 'TitaniumKit', 'Sources'), path.join(DEST_IOS, 'include'), cb);
 				},
-				function (cb) {
-					globCopy('**/*.h', path.join(IOS_ROOT, 'headers', 'JavaScriptCore'), path.join(DEST_IOS, 'include', 'JavaScriptCore'), cb);
+				// Copy legacy copies of APSAnalytics.h and APSHTTPClient.h into 'include/' to retain backwards compatibility in SDK 8.0.0
+				// TODO: Inject a deprecation warning if used and remove in SDK 9.0.0
+				function copyLegacyLibraryHeaders (cb) {
+					globCopy('**/*.h', path.join(IOS_ROOT, 'TitaniumKit', 'TitaniumKit', 'Libraries'), path.join(DEST_IOS, 'include'), cb);
 				},
-				function (cb) {
-					copyFiles(IOS_ROOT, DEST_IOS, ['AppledocSettings.plist', 'Classes', 'cli', 'headers', 'iphone', 'templates'], cb);
-				}.bind(this),
+				// Copy meta files and directories
+				function copyMetaFiles (cb) {
+					copyFiles(IOS_ROOT, DEST_IOS, [ 'AppledocSettings.plist', 'Classes', 'cli', 'iphone', 'templates' ], cb);
+				},
+				// Copy TitaniumKit
+				function copyTitaniumKit (cb) {
+					copyFiles(path.join(IOS_ROOT, 'TitaniumKit', 'build', 'Release-iphoneuniversal'), path.join(DEST_IOS, 'Frameworks'), [ 'TitaniumKit.framework' ], cb);
+				},
+				// Copy module templates (Swift & Obj-C)
+				function copyModuleTemplates (cb) {
+					copyFiles(IOS_ROOT, DEST_IOS, [ 'AppledocSettings.plist', 'Classes', 'cli', 'iphone', 'templates' ], cb);
+				},
 				// Copy and inject values for special source files
-				function (cb) {
-					var subs = {
-						'__VERSION__': this.sdkVersion,
-						'__TIMESTAMP__': this.timestamp,
-						'__GITHASH__': this.gitHash
+				function injectSDKConstants (cb) {
+					const subs = {
+						__SDK_VERSION__: this.sdkVersion,
+						__BUILD_DATE__: this.timestamp,
+						__BUILD_HASH__: this.gitHash
 					};
-					copyAndModifyFiles(path.join(IOS_ROOT, 'Classes'), path.join(DEST_IOS, 'Classes'), ['TopTiModule.m', 'TiApp.m'], subs, cb);
+					// TODO: DO we need this? The above constants are not even used so far.
+					const dest = path.join(DEST_IOS, 'main.m');
+					const contents = fs.readFileSync(path.join(ROOT_DIR, 'support', 'iphone', 'main.m')).toString().replace(/(__.+?__)/g, function (match, key) {
+						const s = subs.hasOwnProperty(key) ? subs[key] : key;
+						return typeof s === 'string' ? s.replace(/"/g, '\\"').replace(/\n/g, '\\n') : s;
+					});
+					fs.writeFileSync(dest, contents);
+					cb();
 				}.bind(this),
-				function (cb) {
-					copyFiles(IOS_LIB, DEST_IOS, ['libtiverify.a', 'libti_ios_debugger.a', 'libti_ios_profiler.a'], cb);
+
+				// Copy Ti.Verify
+				function copyTiVerify (cb) {
+					copyFiles(IOS_LIB, DEST_IOS, [ 'libtiverify.a' ], cb);
 				},
-				// copy iphone/package.json, but replace __VERSION__ with our version!
-				function (cb) {
-					copyAndModifyFile(IOS_ROOT, DEST_IOS, 'package.json', {'__VERSION__': this.sdkVersion}, cb);
+				// Copy iphone/package.json, but replace __VERSION__ with our version!
+				function copyPackageJSON (cb) {
+					copyAndModifyFile(IOS_ROOT, DEST_IOS, 'package.json', { __VERSION__: this.sdkVersion }, cb);
 				}.bind(this),
-				// Copy support/osx/* to zipSDKDir
-				function (cb) {
-					fs.copy(path.join(SUPPORT_DIR, 'osx'), packager.zipSDKDir, cb);
-				}.bind(this),
-				// Copy iphone/Resources/modules to iphone/
-				function (cb) {
+				// Copy iphone/Resources/modules/<name>/* to this.zipSDKDir/iphone/modules/<name>/images
+				// TODO: Pretty sure these can be removed nowadays
+				function copyModuleAssets (cb) {
 					fs.copy(path.join(IOS_ROOT, 'Resources', 'modules'), path.join(DEST_IOS, 'modules'), cb);
-				}.bind(this)
+				}
 			], callback);
 		}.bind(this)
 	], function (err) {
 		if (err) {
 			return next(err);
 		}
-		// Ensure we've fetched libTiCore before we copy it
-		copyFiles(IOS_LIB, DEST_IOS, ['libTiCore.a'], next);
+		next();
 	});
 };
 

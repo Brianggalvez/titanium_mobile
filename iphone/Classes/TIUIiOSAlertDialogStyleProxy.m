@@ -7,19 +7,19 @@
 #ifdef USE_TI_UIIOSALERTDIALOGSTYLE
 
 #import "TIUIiOSAlertDialogStyleProxy.h"
-#import "TiBase.h"
+#import <TitaniumKit/TiBase.h>
 
 @implementation TIUIiOSAlertDialogStyleProxy
 
--(NSString*)apiName
+- (NSString *)apiName
 {
-    return @"Ti.UI.iOS.AlertDialogStyle";
+  return @"Ti.UI.iOS.AlertDialogStyle";
 }
 
-MAKE_SYSTEM_PROP(DEFAULT,                   UIAlertViewStyleDefault);
-MAKE_SYSTEM_PROP(PLAIN_TEXT_INPUT,          UIAlertViewStylePlainTextInput);
-MAKE_SYSTEM_PROP(SECURE_TEXT_INPUT,         UIAlertViewStyleSecureTextInput);
-MAKE_SYSTEM_PROP(LOGIN_AND_PASSWORD_INPUT,  UIAlertViewStyleLoginAndPasswordInput);
+MAKE_SYSTEM_PROP(DEFAULT, UIAlertViewStyleDefault);
+MAKE_SYSTEM_PROP(PLAIN_TEXT_INPUT, UIAlertViewStylePlainTextInput);
+MAKE_SYSTEM_PROP(SECURE_TEXT_INPUT, UIAlertViewStyleSecureTextInput);
+MAKE_SYSTEM_PROP(LOGIN_AND_PASSWORD_INPUT, UIAlertViewStyleLoginAndPasswordInput);
 @end
 
 #endif

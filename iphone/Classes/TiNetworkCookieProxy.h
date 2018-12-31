@@ -5,14 +5,13 @@
  * Please see the LICENSE included with this distribution for details.
  */
 
-#import "TiProxy.h"
+#import <TitaniumKit/TiProxy.h>
 
-@interface TiNetworkCookieProxy : TiProxy
-{
-    NSMutableDictionary *_cookieDict;
+@interface TiNetworkCookieProxy : TiProxy {
+  NSMutableDictionary *_cookieDict;
 }
 
-@property(nonatomic) BOOL isHTTPOnly;
--(id)initWithCookie:(NSHTTPCookie*)cookie andPageContext:(id<TiEvaluator>)context;
--(NSHTTPCookie*)newCookie;
+@property (nonatomic) BOOL isHTTPOnly;
+- (id)initWithCookie:(NSHTTPCookie *)cookie andPageContext:(id<TiEvaluator>)context;
+- (NSHTTPCookie *)newCookie;
 @end

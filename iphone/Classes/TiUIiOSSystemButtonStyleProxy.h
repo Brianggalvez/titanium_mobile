@@ -6,15 +6,14 @@
  */
 #ifdef USE_TI_UIIOSSYSTEMBUTTONSTYLE
 
-#import "TiProxy.h"
+#import <TitaniumKit/TiProxy.h>
 
 @interface TiUIiOSSystemButtonStyleProxy : TiProxy {
-    
 }
 
-@property(nonatomic,readonly) NSNumber *DONE;
-@property(nonatomic,readonly) NSNumber *BORDERED;
-@property(nonatomic,readonly) NSNumber *PLAIN;
+@property (nonatomic, readonly) NSNumber *DONE;
+@property (nonatomic, readonly) NSNumber *BORDERED;
+@property (nonatomic, readonly) NSNumber *PLAIN;
 
 @end
 

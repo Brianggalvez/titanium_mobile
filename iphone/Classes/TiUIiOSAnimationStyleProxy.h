@@ -6,18 +6,16 @@
  */
 #ifdef USE_TI_UIIOSANIMATIONSTYLE
 
-#import "TiProxy.h"
+#import <TitaniumKit/TiProxy.h>
 
 @interface TiUIiOSAnimationStyleProxy : TiProxy {
-    
 }
 
-@property(nonatomic,readonly) NSNumber *NONE;
-@property(nonatomic,readonly) NSNumber *CURL_UP;
-@property(nonatomic,readonly) NSNumber *CURL_DOWN;
-@property(nonatomic,readonly) NSNumber *FLIP_FROM_LEFT;
-@property(nonatomic,readonly) NSNumber *FLIP_FROM_RIGHT;
-
+@property (nonatomic, readonly) NSNumber *NONE;
+@property (nonatomic, readonly) NSNumber *CURL_UP;
+@property (nonatomic, readonly) NSNumber *CURL_DOWN;
+@property (nonatomic, readonly) NSNumber *FLIP_FROM_LEFT;
+@property (nonatomic, readonly) NSNumber *FLIP_FROM_RIGHT;
 
 @end
 

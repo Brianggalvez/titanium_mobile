@@ -7,23 +7,23 @@
 #ifdef USE_TI_UIIOSANIMATIONSTYLE
 
 #import "TiUIiOSAnimationStyleProxy.h"
-#import "TiBase.h"
+#import <TitaniumKit/TiBase.h>
 
 @implementation TiUIiOSAnimationStyleProxy
 
--(NSString*)apiName
+- (NSString *)apiName
 {
-    return @"Ti.UI.iOS.AnimationStyle";
+  return @"Ti.UI.iOS.AnimationStyle";
 }
 
-MAKE_SYSTEM_PROP(NONE,              UIViewAnimationOptionTransitionNone);
-MAKE_SYSTEM_PROP(CURL_UP,           UIViewAnimationOptionTransitionCurlUp);
-MAKE_SYSTEM_PROP(CURL_DOWN,         UIViewAnimationOptionTransitionCurlDown)
-MAKE_SYSTEM_PROP(FLIP_FROM_LEFT,    UIViewAnimationOptionTransitionFlipFromLeft);
-MAKE_SYSTEM_PROP(FLIP_FROM_RIGHT,   UIViewAnimationOptionTransitionFlipFromRight);
-MAKE_SYSTEM_PROP(FLIP_FROM_TOP,     UIViewAnimationOptionTransitionFlipFromTop);
-MAKE_SYSTEM_PROP(FLIP_FROM_BOTTOM,  UIViewAnimationOptionTransitionFlipFromBottom);
-MAKE_SYSTEM_PROP(CROSS_DISSOLVE,    UIViewAnimationOptionTransitionCrossDissolve);
+MAKE_SYSTEM_PROP(NONE, UIViewAnimationOptionTransitionNone);
+MAKE_SYSTEM_PROP(CURL_UP, UIViewAnimationOptionTransitionCurlUp);
+MAKE_SYSTEM_PROP(CURL_DOWN, UIViewAnimationOptionTransitionCurlDown)
+MAKE_SYSTEM_PROP(FLIP_FROM_LEFT, UIViewAnimationOptionTransitionFlipFromLeft);
+MAKE_SYSTEM_PROP(FLIP_FROM_RIGHT, UIViewAnimationOptionTransitionFlipFromRight);
+MAKE_SYSTEM_PROP(FLIP_FROM_TOP, UIViewAnimationOptionTransitionFlipFromTop);
+MAKE_SYSTEM_PROP(FLIP_FROM_BOTTOM, UIViewAnimationOptionTransitionFlipFromBottom);
+MAKE_SYSTEM_PROP(CROSS_DISSOLVE, UIViewAnimationOptionTransitionCrossDissolve);
 
 @end
 
